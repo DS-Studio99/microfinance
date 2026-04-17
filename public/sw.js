@@ -15,6 +15,16 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Handle navigation requests to serve index.html for SPA routes
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html').then((response) => {
+        return response || fetch(event.request);
+      })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
