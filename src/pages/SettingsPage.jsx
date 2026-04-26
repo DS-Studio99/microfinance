@@ -1,24 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MdSettings, MdEditDocument, MdSecurity, MdDelete, MdCloudDownload, MdCloudUpload, MdWarning, MdCloudSync, MdVpnKey } from 'react-icons/md'
+import { MdSettings, MdEditDocument, MdSecurity, MdDelete, MdCloudDownload, MdCloudUpload, MdWarning, MdHistory, MdRestore } from 'react-icons/md'
 import { supabase } from '../lib/supabase'
+import { getCloudBackups, fetchCloudBackupData, restoreDataToDB, generateBackupData, uploadBackupToCloud } from '../lib/backupService'
 import { useSettingsStore } from '../store/settingsStore'
 
 const SettingsPage = () => {
   const { allowEdit, allowDelete, toggleAllowEdit, toggleAllowDelete } = useSettingsStore()
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
-  const [driveLoading, setDriveLoading] = useState(false)
-  const [googleClientId, setGoogleClientId] = useState(localStorage.getItem('google_client_id') || '')
+  const [cloudBackups, setCloudBackups] = useState([])
+  const [fetchingBackups, setFetchingBackups] = useState(false)
   const fileInputRef = useRef(null)
 
-  useEffect(() => {
-    if (!document.getElementById('google-gsi-script')) {
-      const script = document.createElement('script')
-      script.id = 'google-gsi-script'
-      script.src = 'https://accounts.google.com/gsi/client'
-      script.async = true
-      document.body.appendChild(script)
+  const loadCloudBackups = async () => {
+    setFetchingBackups(true)
+    try {
+      const files = await getCloudBackups()
+      setCloudBackups(files || [])
+    } catch (err) {
+      console.error('Failed to load cloud backups', err)
+    } finally {
+      setFetchingBackups(false)
     }
+  }
+
+  useEffect(() => {
+    loadCloudBackups()
   }, [])
 
   const handleBackup = async () => {
@@ -50,85 +57,13 @@ const SettingsPage = () => {
       setTimeout(() => {
         document.body.removeChild(a)
         window.URL.revokeObjectURL(url)
-        alert('ম্যানুয়াল ব্যাকআপ সফলভাবে ডাউনলোড হয়েছে!')
+        alert('ব্যাকআপ সফলভাবে ডাউনলোড হয়েছে!')
       }, 1000)
     } catch (err) {
       console.error(err)
       alert('ব্যাকআপ তৈরি করতে সমস্যা হয়েছে।')
     } finally {
       setBackupLoading(false)
-    }
-  }
-
-  // Google Drive Direct Backup
-  const handleDriveBackup = async () => {
-    if (!googleClientId) {
-      alert('দয়া করে প্রথমে নিচে Google Client ID সেট করুন।')
-      return
-    }
-    
-    if (!window.google || !window.google.accounts) {
-      alert('গুগল সার্ভিস লোড হতে সমস্যা হচ্ছে, দয়া করে ইন্টারনেট কানেকশন চেক করুন।')
-      return
-    }
-
-    setDriveLoading(true)
-    
-    try {
-      // 1. Fetch data
-      const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
-      const backupData = {}
-      for (const table of tables) {
-        const { data } = await supabase.from(table).select('*')
-        backupData[table] = data || []
-      }
-      
-      // 2. Init Google Token Client
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: googleClientId,
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        callback: async (tokenResponse) => {
-          if (tokenResponse && tokenResponse.access_token) {
-            try {
-              // 3. Upload to Google Drive via multipart
-              const metadata = {
-                name: `brac_backup_${new Date().toISOString().split('T')[0]}.json`,
-                mimeType: 'application/json',
-              }
-              const form = new FormData()
-              form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
-              form.append('file', new Blob([JSON.stringify(backupData)], { type: 'application/json' }))
-
-              const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                body: form,
-              })
-              
-              if (res.ok) {
-                alert('সফলভাবে গুগল ড্রাইভে ব্যাকআপ সেভ হয়েছে!')
-              } else {
-                throw new Error('Upload failed')
-              }
-            } catch (err) {
-              console.error(err)
-              alert('গুগল ড্রাইভে আপলোড করতে সমস্যা হয়েছে।')
-            } finally {
-              setDriveLoading(false)
-            }
-          }
-        },
-        error_callback: () => {
-          alert('গুগল লগইন বাতিল করা হয়েছে।')
-          setDriveLoading(false)
-        }
-      })
-      
-      client.requestAccessToken()
-    } catch (err) {
-      console.error(err)
-      alert('ডাটা প্রস্তুত করতে সমস্যা হয়েছে।')
-      setDriveLoading(false)
     }
   }
 
@@ -180,6 +115,43 @@ const SettingsPage = () => {
     }
     
     reader.readAsText(file)
+  }
+
+  const handleInstantCloudBackup = async () => {
+    setBackupLoading(true)
+    try {
+      const todayStr = new Date().toISOString().split('T')[0]
+      const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '-')
+      const fileName = `manual_cloud_backup_${todayStr}_${timeStr}.json`
+      
+      const jsonString = await generateBackupData()
+      await uploadBackupToCloud(jsonString, fileName)
+      
+      alert('ক্লাউডে ব্যাকআপ সফলভাবে সেভ হয়েছে!')
+      loadCloudBackups() // Refresh the list
+    } catch (err) {
+      console.error(err)
+      alert('ক্লাউডে ব্যাকআপ সেভ করতে সমস্যা হয়েছে।')
+    } finally {
+      setBackupLoading(false)
+    }
+  }
+
+  const handleCloudRestore = async (fileName) => {
+    if (!window.confirm(`আপনি কি নিশ্চিত যে আপনি '${fileName}' থেকে ডাটা রিস্টোর করতে চান? এটি সাইটের বর্তমান ডাটা ওভাররাইট করবে!`)) return
+    
+    setRestoreLoading(true)
+    try {
+      const backupData = await fetchCloudBackupData(fileName)
+      await restoreDataToDB(backupData)
+      alert('রিস্টোর সফলভাবে সম্পন্ন হয়েছে! দয়া করে পেজটি রিফ্রেশ করুন।')
+      window.location.reload()
+    } catch (err) {
+      alert('ক্লাউড থেকে রিস্টোর করতে সমস্যা হয়েছে।')
+      console.error(err)
+    } finally {
+      setRestoreLoading(false)
+    }
   }
 
   return (
@@ -300,25 +272,7 @@ const SettingsPage = () => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-          {/* Drive Backup Button */}
-          <button 
-            onClick={handleDriveBackup}
-            disabled={driveLoading}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              background: '#0ea5e9', color: '#fff', border: 'none',
-              padding: '0.85rem 1rem', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              cursor: driveLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s',
-              fontFamily: "'Hind Siliguri', sans-serif", opacity: driveLoading ? 0.7 : 1
-            }}
-            onMouseEnter={e => { if (!driveLoading) e.currentTarget.style.background = '#0284c7' }}
-            onMouseLeave={e => { if (!driveLoading) e.currentTarget.style.background = '#0ea5e9' }}
-          >
-            <MdCloudSync style={{ fontSize: 20 }} />
-            {driveLoading ? 'ড্রাইভে আপলোড হচ্ছে...' : 'সরাসরি গুগল ড্রাইভে ব্যাকআপ করুন'}
-          </button>
-
-          {/* Manual Backup Button */}
+          {/* Backup Button */}
           <button 
             onClick={handleBackup}
             disabled={backupLoading}
@@ -359,7 +313,7 @@ const SettingsPage = () => {
               onMouseLeave={e => { if (!restoreLoading) e.currentTarget.style.background = '#f8fafc' }}
             >
               <MdCloudUpload style={{ fontSize: 20, color: '#475569' }} />
-              {restoreLoading ? 'রিস্টোর হচ্ছে...' : 'যেকোনো ব্যাকআপ থেকে রিস্টোর করুন'}
+              {restoreLoading ? 'রিস্টোর হচ্ছে...' : 'ম্যানুয়াল ব্যাকআপ থেকে রিস্টোর করুন'}
             </button>
           </div>
           
@@ -369,36 +323,63 @@ const SettingsPage = () => {
                সতর্কতা: রিস্টোর করলে বর্তমান ডাটার সাথে ব্যাকআপ ডাটা যুক্ত হবে এবং ওভাররাইট হতে পারে।
              </p>
           </div>
-        </div>
 
-        {/* Google Client ID Setup */}
-        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e8edf3' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#475569', marginBottom: 8, fontFamily: "'Hind Siliguri', sans-serif" }}>
-            <MdVpnKey style={{ fontSize: 16 }} /> Google Client ID (ড্রাইভ ব্যাকআপের জন্য)
-          </label>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <input 
-              type="text" 
-              value={googleClientId}
-              onChange={e => setGoogleClientId(e.target.value)}
-              placeholder="আপনার Google OAuth Client ID দিন..."
-              className="field-input"
-              style={{ flex: 1, padding: '0.75rem 1rem', fontSize: 13 }}
-            />
-            <button 
-              onClick={() => {
-                localStorage.setItem('google_client_id', googleClientId)
-                alert('Client ID সেভ করা হয়েছে!')
-              }}
-              className="btn-primary"
-              style={{ padding: '0 1.25rem', borderRadius: 12, fontSize: 13 }}
-            >
-              সেভ করুন
-            </button>
+          <hr style={{ border: 'none', borderTop: '1px dashed #e2e8f0', margin: '1rem 0' }} />
+
+          {/* Cloud Auto Backups List */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 10 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: '#334155', fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+                <MdHistory style={{ color: '#64748b', fontSize: 18 }} /> ক্লাউড ব্যাকআপ তালিকা
+              </h4>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button 
+                  onClick={handleInstantCloudBackup} 
+                  disabled={backupLoading}
+                  style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#059669', padding: '0.4rem 0.8rem', borderRadius: 8, fontSize: 12, cursor: backupLoading ? 'not-allowed' : 'pointer', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                  <MdCloudUpload style={{ fontSize: 14 }} /> এখনি ব্যাকআপ নিন
+                </button>
+                <button onClick={loadCloudBackups} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#3b82f6', padding: '0.4rem 0.8rem', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 700 }}>
+                  রিফ্রেশ
+                </button>
+              </div>
+            </div>
+            
+            {fetchingBackups ? (
+              <div style={{ padding: '1rem', textAlign: 'center', background: '#f8fafc', borderRadius: 12 }}>
+                <div className="spinner" style={{ width: 24, height: 24, border: '3px solid #cbd5e1', borderTopColor: '#3b82f6', borderRadius: '50%', margin: '0 auto 8px' }} />
+                <p style={{ fontSize: 12, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif" }}>লোড হচ্ছে...</p>
+              </div>
+            ) : cloudBackups.length === 0 ? (
+              <div style={{ padding: '1rem', textAlign: 'center', background: '#f8fafc', borderRadius: 12, color: '#64748b', fontSize: 13, fontFamily: "'Hind Siliguri', sans-serif" }}>
+                কোনো ক্লাউড ব্যাকআপ পাওয়া যায়নি।
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {cloudBackups.map((file) => (
+                  <div key={file.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.75rem 1rem' }}>
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif" }}>{file.name}</p>
+                      <p style={{ fontSize: 11, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 2 }}>
+                        {new Date(file.created_at).toLocaleString('bn-BD')} • {(file.metadata?.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => handleCloudRestore(file.name)}
+                      disabled={restoreLoading}
+                      style={{ background: '#dcfce7', color: '#16a34a', border: 'none', padding: '0.4rem 0.8rem', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: restoreLoading ? 'not-allowed' : 'pointer', fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <MdRestore style={{ fontSize: 14 }} /> রিস্টোর
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 8, textAlign: 'center' }}>
+              সিস্টেম প্রতিদিন স্বয়ংক্রিয়ভাবে ব্যাকআপ নেয় এবং শেষের ১০ দিনের ব্যাকআপ সংরক্ষণ করে।
+            </p>
           </div>
-          <p style={{ fontSize: 11, color: '#64748b', marginTop: 8, fontFamily: "'Hind Siliguri', sans-serif" }}>
-             ড্রাইভে অটো আপলোড কাজ করার জন্য গুগল ক্লাউড কনসোল থেকে একটি OAuth Client ID তৈরি করে এখানে বসাতে হবে।
-          </p>
         </div>
       </div>
     </div>

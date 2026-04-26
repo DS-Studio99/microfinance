@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './store/authStore'
+import { runAutoBackupRoutine } from './lib/backupService'
 import SplashScreen from './components/SplashScreen'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
@@ -52,6 +53,14 @@ const App = () => {
 
   useEffect(() => {
     initialize()
+    // Run auto backup if authenticated
+    const checkBackup = async () => {
+      const { user } = useAuthStore.getState()
+      if (user) {
+        await runAutoBackupRoutine()
+      }
+    }
+    checkBackup()
   }, [initialize])
 
   return (
