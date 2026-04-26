@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import {
   MdPeople, MdGroups, MdToday, MdWarning, MdEvent,
   MdArrowForward, MdRefresh, MdDashboard, MdPendingActions,
-  MdCheckCircle, MdAccessTime,
+  MdCheckCircle, MdAccessTime, MdAttachMoney, MdAddCard, MdBook,
 } from 'react-icons/md'
 import { RiShieldCheckLine } from 'react-icons/ri'
 import { HiSparkles } from 'react-icons/hi2'
@@ -73,6 +73,49 @@ const StatCard = ({ title, value, icon: Icon, g1, g2, glow, badge, onClick, load
   </div>
 )
 
+/* ── Money stat card (shows ৳ prefix) ── */
+const MoneyCard = ({ title, value, icon: Icon, g1, g2, glow, badge, onClick, loading, delay }) => (
+  <div
+    onClick={onClick}
+    role={onClick ? 'button' : undefined}
+    tabIndex={onClick ? 0 : undefined}
+    style={{
+      background: `linear-gradient(135deg,${g1},${g2})`,
+      borderRadius: 18, padding: '1.1rem 1.2rem',
+      cursor: onClick ? 'pointer' : 'default',
+      position: 'relative', overflow: 'hidden',
+      boxShadow: `0 6px 24px ${glow}40`,
+      animation: `slideUp 0.45s ease-out ${delay}s both`,
+      transition: 'transform 0.22s, box-shadow 0.22s',
+    }}
+    onMouseEnter={e => { if (onClick) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 14px 36px ${glow}55` } }}
+    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 6px 24px ${glow}40` }}
+  >
+    <div style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', pointerEvents: 'none' }} />
+    <div style={{ position: 'relative', zIndex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon style={{ color: '#fff', fontSize: 20 }} />
+        </div>
+        {badge && (
+          <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 20, padding: '2px 9px', fontSize: 10, fontWeight: 700, color: '#fff' }}>{badge}</span>
+        )}
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 5 }}>
+        {loading ? <div className="skeleton" style={{ width: 80, height: 22 }} /> : <>৳ {value.toLocaleString('bn-BD')}</>}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.82)', fontFamily: "'Hind Siliguri', sans-serif" }}>{title}</p>
+        {onClick && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'Hind Siliguri', sans-serif" }}>
+            দেখুন <MdArrowForward style={{ fontSize: 13 }} />
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)
+
 /* ── Quick nav card ── */
 const QuickCard = ({ icon: Icon, title, subtitle, count, color, onClick, loading, delay }) => (
   <div
@@ -123,6 +166,12 @@ const DashboardPage = () => {
     { title: 'পেন্ডিং কালেকশন', value: stats.pendingCollections, icon: MdPendingActions, g1: '#8b5cf6', g2: '#6d28d9', glow: '#8b5cf6', badge: 'পোস্টিং বাকি', onClick: () => navigate('/collections'), delay: 0.25 },
   ]
 
+  const moneyCard = { title: 'টোটাল বাকি পাওনা', value: stats.totalDueAmount, icon: MdAttachMoney, g1: '#be123c', g2: '#9f1239', glow: '#be123c', badge: 'পাওনা', onClick: () => navigate('/total-due-amount'), delay: 0.3 }
+  const actionCards = [
+    { title: 'নতুন লোন আবেদন', value: stats.totalLoanApplications, icon: MdAddCard, g1: '#0284c7', g2: '#0369a1', glow: '#0284c7', badge: 'লোন', onClick: () => navigate('/new-loan'), delay: 0.35 },
+    { title: 'বই সংগ্রহ', value: stats.totalBooks, icon: MdBook, g1: '#0891b2', g2: '#0e7490', glow: '#0891b2', badge: 'বই', onClick: () => navigate('/book-collection'), delay: 0.4 },
+  ]
+
   return (
     <>
       <style>{`
@@ -134,6 +183,13 @@ const DashboardPage = () => {
         }
         @media (min-width: 768px) { .db-stats-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .db-stats-grid { grid-template-columns: repeat(6, 1fr); } }
+        .db-action-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+          margin-bottom: 1.25rem;
+        }
+        @media (min-width: 600px) { .db-action-grid { grid-template-columns: 1fr 1fr 1fr; } }
         .db-bottom-grid {
           display: grid;
           grid-template-columns: 1fr;
@@ -207,6 +263,17 @@ const DashboardPage = () => {
         {/* ── Stat cards ── */}
         <div className="db-stats-grid">
           {statCards.map(c => <StatCard key={c.title} {...c} loading={loading} />)}
+        </div>
+
+        {/* ── New Feature Cards ── */}
+        <div style={{ marginBottom: '0.6rem' }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+            ✨ নতুন ফিচার
+          </p>
+        </div>
+        <div className="db-action-grid">
+          <MoneyCard {...moneyCard} loading={loading} />
+          {actionCards.map(c => <StatCard key={c.title} {...c} loading={loading} />)}
         </div>
 
         {/* ── Bottom grid ── */}

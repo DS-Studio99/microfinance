@@ -110,7 +110,10 @@ export const useDashboardStats = () => {
     todayPayments: 0,
     tomorrowPayments: 0,
     dueMembers: 0,
-    pendingCollections: 0
+    pendingCollections: 0,
+    totalDueAmount: 0,
+    totalLoanApplications: 0,
+    totalBooks: 0,
   })
   const [loading, setLoading] = useState(true)
 
@@ -158,13 +161,44 @@ export const useDashboardStats = () => {
         console.warn('Collections table not yet available or accessible')
       }
 
+      // Fetch total due amount
+      let totalDueAmount = 0
+      try {
+        const { data: dueData } = await supabase
+          .from('members')
+          .select('due_amount, loan_amount')
+          .eq('is_due', true)
+        totalDueAmount = (dueData || []).reduce((sum, m) => sum + (m.due_amount || m.loan_amount || 0), 0)
+      } catch (e) { console.warn('due amount fetch failed') }
+
+      // Fetch total loan applications
+      let totalLoanApplications = 0
+      try {
+        const { count } = await supabase
+          .from('loan_applications')
+          .select('*', { count: 'exact', head: true })
+        totalLoanApplications = count || 0
+      } catch (e) { console.warn('loan_applications table not yet available') }
+
+      // Fetch total books with-me
+      let totalBooks = 0
+      try {
+        const { count } = await supabase
+          .from('book_collections')
+          .select('*', { count: 'exact', head: true })
+        totalBooks = count || 0
+      } catch (e) { console.warn('book_collections table not yet available') }
+
       setStats({
         totalMembers: membersRes.count || 0,
         totalVOs: voRes.count || 0,
         todayPayments: todayCount,
         tomorrowPayments: tomorrowCount,
         dueMembers: dueRes.count || 0,
-        pendingCollections: pendingCount
+        pendingCollections: pendingCount,
+        totalDueAmount,
+        totalLoanApplications,
+        totalBooks,
       })
     } catch (err) {
       console.error('Stats fetch error:', err)

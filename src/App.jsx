@@ -14,6 +14,9 @@ import SettingsPage from './pages/SettingsPage'
 import TodayKistiPage from './pages/TodayKistiPage'
 import TomorrowKistiPage from './pages/TomorrowKistiPage'
 import CollectionsPage from './pages/CollectionsPage'
+import TotalDueAmountPage from './pages/TotalDueAmountPage'
+import NewLoanPage from './pages/NewLoanPage'
+import BookCollectionPage from './pages/BookCollectionPage'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -111,6 +114,9 @@ const App = () => {
             <Route path="tomorrow-kisti" element={<TomorrowKistiPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="total-due-amount" element={<TotalDueAmountPage />} />
+            <Route path="new-loan" element={<NewLoanPage />} />
+            <Route path="book-collection" element={<BookCollectionPage />} />
           </Route>
 
           {/* Catch-all */}
