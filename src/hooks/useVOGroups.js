@@ -116,6 +116,7 @@ export const useDashboardStats = () => {
     totalDueAmount: 0,
     totalLoanApplications: 0,
     totalBooks: 0,
+    totalNotes: 0
   })
   const [loading, setLoading] = useState(true)
 
@@ -196,6 +197,15 @@ export const useDashboardStats = () => {
         totalBooks = count || 0
       } catch (e) { console.warn('book_collections table not yet available') }
 
+      // Fetch total notes
+      let totalNotes = 0
+      try {
+        const { count } = await supabase
+          .from('notes')
+          .select('*', { count: 'exact', head: true })
+        totalNotes = count || 0
+      } catch (e) { console.warn('notes table not yet available') }
+
       setStats({
         totalMembers: membersRes.count || 0,
         totalVOs: voRes.count || 0,
@@ -208,6 +218,7 @@ export const useDashboardStats = () => {
         totalDueAmount,
         totalLoanApplications,
         totalBooks,
+        totalNotes
       })
     } catch (err) {
       console.error('Stats fetch error:', err)

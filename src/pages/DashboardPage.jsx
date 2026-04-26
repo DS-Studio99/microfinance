@@ -171,7 +171,7 @@ const DashboardPage = () => {
   const actionCards = [
     { title: 'নতুন লোন আবেদন', value: stats.totalLoanApplications, icon: MdAddCard, g1: '#0284c7', g2: '#0369a1', glow: '#0284c7', badge: 'লোন', onClick: () => navigate('/new-loan'), delay: 0.35 },
     { title: 'বই সংগ্রহ', value: stats.totalBooks, icon: MdBook, g1: '#0891b2', g2: '#0e7490', glow: '#0891b2', badge: 'বই', onClick: () => navigate('/book-collection'), delay: 0.4 },
-    { title: 'জরুরী নোট', value: 'নোট', icon: MdEditNote, g1: '#f59e0b', g2: '#d97706', glow: '#f59e0b', badge: 'নোট', onClick: () => navigate('/notes'), delay: 0.45 },
+    { title: 'জরুরী নোট', value: stats.totalNotes, icon: MdEditNote, g1: '#f59e0b', g2: '#d97706', glow: '#f59e0b', badge: 'নোট', onClick: () => navigate('/notes'), delay: 0.45 },
   ]
 
   return (
