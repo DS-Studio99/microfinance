@@ -109,6 +109,8 @@ export const useDashboardStats = () => {
     totalVOs: 0,
     todayPayments: 0,
     tomorrowPayments: 0,
+    todayConfirmed: 0,
+    tomorrowConfirmed: 0,
     dueMembers: 0,
     pendingCollections: 0,
     totalDueAmount: 0,
@@ -136,18 +138,22 @@ export const useDashboardStats = () => {
       // for today and tomorrow payments, we fetch since we need custom logic
       const { data: kistiData } = await supabase
         .from('members')
-        .select('loan_payment_date, expected_payment_date')
+        .select('loan_payment_date, expected_payment_date, is_confirmed')
         .is('loan_cleared_date', null)
 
-      const todayCount = (kistiData || []).filter(m =>
+      const todayList = (kistiData || []).filter(m =>
         (m.loan_payment_date && m.loan_payment_date === today) ||
         (m.expected_payment_date && m.expected_payment_date === today)
-      ).length
-
-      const tomorrowCount = (kistiData || []).filter(m =>
+      )
+      const tomorrowList = (kistiData || []).filter(m =>
         (m.loan_payment_date && m.loan_payment_date === tomorrow) ||
         (m.expected_payment_date && m.expected_payment_date === tomorrow)
-      ).length
+      )
+
+      const todayCount = todayList.length
+      const tomorrowCount = tomorrowList.length
+      const todayConfirmedCount = todayList.filter(m => m.is_confirmed).length
+      const tomorrowConfirmedCount = tomorrowList.filter(m => m.is_confirmed).length
 
       // Also fetch pending collections (gracefully handle if table missing)
       let pendingCount = 0
@@ -166,17 +172,18 @@ export const useDashboardStats = () => {
       try {
         const { data: dueData } = await supabase
           .from('members')
-          .select('due_amount, loan_amount')
-          .eq('is_due', true)
-        totalDueAmount = (dueData || []).reduce((sum, m) => sum + (m.due_amount || m.loan_amount || 0), 0)
+          .select('extra_amount')
+          .gt('extra_amount', 0)
+        totalDueAmount = (dueData || []).reduce((sum, m) => sum + (m.extra_amount || 0), 0)
       } catch (e) { console.warn('due amount fetch failed') }
 
-      // Fetch total loan applications
+      // Fetch pending loan applications count
       let totalLoanApplications = 0
       try {
         const { count } = await supabase
           .from('loan_applications')
           .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending')
         totalLoanApplications = count || 0
       } catch (e) { console.warn('loan_applications table not yet available') }
 
@@ -194,6 +201,8 @@ export const useDashboardStats = () => {
         totalVOs: voRes.count || 0,
         todayPayments: todayCount,
         tomorrowPayments: tomorrowCount,
+        todayConfirmed: todayConfirmedCount,
+        tomorrowConfirmed: tomorrowConfirmedCount,
         dueMembers: dueRes.count || 0,
         pendingCollections: pendingCount,
         totalDueAmount,

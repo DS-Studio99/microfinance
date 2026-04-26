@@ -3,407 +3,359 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 import {
-  MdArrowBack, MdPerson, MdHome, MdGroups, MdBadge, MdCalendarToday,
-  MdCreditCard, MdFamilyRestroom, MdChildCare, MdSchool, MdCheck,
-  MdHistory, MdAdd, MdClose, MdSave, MdArrowForward,
+  MdArrowBack, MdPerson, MdGroups, MdCheckCircle, MdPendingActions,
+  MdHistory, MdAdd, MdDelete, MdEdit, MdAttachMoney, MdArrowForward,
+  MdKeyboardArrowDown, MdKeyboardArrowUp, MdPhone, MdLocationOn, MdInfo, MdClose, MdWarning
 } from 'react-icons/md'
+import LoanFormModal from '../components/LoanFormModal'
 
-const CARD_TYPES = ['NID', 'জন্ম নিবন্ধন সনদ']
-
-const initialForm = {
-  // Member info
-  member_name: '',
-  full_address: '',
-  vo_number: '',
-  member_number: '',
-  birth_date: '',
-  card_type: 'NID',
-  id_number: '',
-  father_name: '',
-  mother_name: '',
-  husband_name: '',
-  // Family info
-  total_members: '',
-  total_children: '',
-  school_going: '',
-  under_five: '',
-  // Loan info
-  loan_amount: '',
-  loan_purpose: '',
-  notes: '',
-}
-
-const LoanHistoryCard = ({ loan, onClose }) => {
-  const [expanded, setExpanded] = useState(false)
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, confirmColor, loading }) => {
+  if (!isOpen) return null
   return (
-    <div style={{
-      background: '#fff', borderRadius: 14, border: '1.5px solid #e0e7ff',
-      marginBottom: 10, overflow: 'hidden', transition: 'box-shadow 0.2s',
-      boxShadow: expanded ? '0 6px 20px rgba(79,70,229,0.12)' : '0 2px 8px rgba(0,0,0,0.05)',
-    }}>
-      <div
-        onClick={() => setExpanded(e => !e)}
-        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.85rem 1rem', cursor: 'pointer' }}
-      >
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#e0e7ff,#c7d2fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <MdPerson style={{ color: '#4f46e5', fontSize: 22 }} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 110, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 400, borderRadius: '24px 24px 0 0', padding: '1.5rem', animation: 'slideUp 0.3s ease-out' }} onClick={e => e.stopPropagation()}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 60, height: 60, borderRadius: '50%', background: confirmColor === 'red' ? '#fef2f2' : '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: `2px solid ${confirmColor === 'red' ? '#fca5a5' : '#86efac'}` }}>
+            {confirmColor === 'red' ? <MdWarning style={{ fontSize: 30, color: '#ef4444' }} /> : <MdCheckCircle style={{ fontSize: 30, color: '#16a34a' }} />}
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: '0 0 8px' }}>{title}</h3>
+          <p style={{ fontSize: 13, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", margin: '0 0 1.5rem', lineHeight: 1.5 }}>{message}</p>
         </div>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 700, color: '#0f172a', fontSize: 14, fontFamily: "'Hind Siliguri', sans-serif" }}>{loan.member_name}</p>
-          <p style={{ fontSize: 11.5, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif" }}>
-            ভিও: {loan.vo_number} • সদস্য নং: {loan.member_number} • ৳ {(loan.loan_amount || 0).toLocaleString('bn-BD')}
-          </p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <span style={{ background: '#f0fdf4', color: '#16a34a', borderRadius: 8, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>সম্পন্ন</span>
-          <span style={{ color: '#94a3b8', fontSize: 11, fontFamily: "'Hind Siliguri', sans-serif" }}>
-            {new Date(loan.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'short', day: 'numeric' })}
-          </span>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: "'Hind Siliguri', sans-serif" }}>বাতিল</button>
+          <button onClick={onConfirm} disabled={loading} style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: confirmColor === 'red' ? '#ef4444' : '#10b981', color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: "'Hind Siliguri', sans-serif" }}>
+            {loading ? 'প্রসেস হচ্ছে...' : confirmText}
+          </button>
         </div>
       </div>
-      {expanded && (
-        <div style={{ padding: '0 1rem 0.85rem 1rem', borderTop: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
-            {[
-              { l: 'পিতার নাম', v: loan.father_name },
-              { l: 'মাতার নাম', v: loan.mother_name },
-              { l: 'স্বামীর নাম', v: loan.husband_name },
-              { l: 'জন্ম তারিখ', v: loan.birth_date },
-              { l: 'কার্ড টাইপ', v: loan.card_type },
-              { l: 'আইডি নম্বর', v: loan.id_number },
-              { l: 'ঠিকানা', v: loan.full_address },
-              { l: 'মোট সদস্য', v: loan.total_members },
-              { l: 'মোট সন্তান', v: loan.total_children },
-              { l: 'স্কুলগামী', v: loan.school_going },
-              { l: '৫ বছরের কম', v: loan.under_five },
-              { l: 'লোনের উদ্দেশ্য', v: loan.loan_purpose },
-            ].filter(i => i.v).map(({ l, v }) => (
-              <div key={l} style={{ background: '#f8fafc', borderRadius: 8, padding: '6px 10px' }}>
-                <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif" }}>{l}</p>
-                <p style={{ fontSize: 13, color: '#0f172a', fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif" }}>{v}</p>
-              </div>
-            ))}
+    </div>
+  )
+}
+
+const LoanCard = ({ loan, onEdit, onDelete, onComplete }) => {
+  const [expanded, setExpanded] = useState(false)
+  const isPending = loan.status === 'pending'
+  const date = new Date(loan.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'short', day: 'numeric' })
+
+  const DetailItem = ({ label, value, icon: Icon }) => (
+    <div style={{ background: '#f8fafc', borderRadius: 10, padding: '8px 12px' }}>
+      <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 4 }}>
+        {Icon && <Icon style={{ fontSize: 11 }} />} {label}
+      </p>
+      <p style={{ fontSize: 13, fontWeight: 700, color: '#334155', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>{value || '--'}</p>
+    </div>
+  )
+
+  return (
+    <div style={{
+      background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0',
+      padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.04)', transition: 'all 0.3s ease',
+    }}>
+      <div 
+        onClick={() => setExpanded(!expanded)} 
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', cursor: 'pointer' }}
+      >
+        <div style={{ flex: 1 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
+            {loan.member_name}
+          </h3>
+          <p style={{ fontSize: 12, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 2 }}>
+            সদস্য নং: #{loan.member_number} &nbsp;•&nbsp; <strong style={{color: '#4f46e5'}}>ভিও - {String(loan.vo_number).padStart(2,'0')}</strong>
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+          <div style={{ background: isPending ? '#fef3c7' : '#dcfce7', color: isPending ? '#b45309' : '#166534', padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>
+            {date}
           </div>
-          {loan.notes && (
-            <div style={{ background: '#fffbeb', borderRadius: 8, padding: '8px 10px', marginTop: 8 }}>
-              <p style={{ fontSize: 11, color: '#92400e', fontFamily: "'Hind Siliguri', sans-serif" }}><b>নোট:</b> {loan.notes}</p>
-            </div>
-          )}
+          {expanded ? <MdKeyboardArrowUp style={{ color: '#94a3b8' }} /> : <MdKeyboardArrowDown style={{ color: '#94a3b8' }} />}
+        </div>
+      </div>
+
+      <div style={{ background: '#f8fafc', borderRadius: 12, padding: '0.75rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div>
+          <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif" }}>লোনের পরিমাণ</p>
+          <p style={{ fontSize: 15, fontWeight: 800, color: '#334155', fontFamily: "'Hind Siliguri', sans-serif" }}>
+            ৳ {(loan.loan_amount || 0).toLocaleString('bn-BD')}
+          </p>
+        </div>
+        <div>
+          <p style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif" }}>মোবাইল নম্বর</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', fontFamily: "'Hind Siliguri', sans-serif" }}>
+            {loan.phone_number || 'নেই'}
+          </p>
+        </div>
+      </div>
+
+      {expanded && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, animation: 'fadeIn 0.3s ease' }}>
+          <div style={{ gridColumn: '1 / -1' }}><DetailItem label="ঠিকানা" value={loan.full_address} icon={MdLocationOn} /></div>
+          <DetailItem label="পিতার নাম" value={loan.father_name} />
+          <DetailItem label="মাতার নাম" value={loan.mother_name} />
+          <DetailItem label="স্বামীর নাম" value={loan.husband_name} />
+          <DetailItem label="কার্ড টাইপ" value={loan.card_type} />
+          <DetailItem label="আইডি নম্বর" value={loan.id_number} />
+          <DetailItem label="জন্ম তারিখ" value={loan.birth_date} />
+          <DetailItem label="পরিবারের সদস্য" value={loan.total_members} />
+          <DetailItem label="মোট সন্তান" value={loan.total_children} />
+          <DetailItem label="স্কুলে যায়" value={loan.school_going} />
+          <DetailItem label="৫ বছরের নিচে" value={loan.under_five} />
+          <div style={{ gridColumn: '1 / -1' }}><DetailItem label="লোনের উদ্দেশ্য" value={loan.loan_purpose} icon={MdInfo} /></div>
+          {loan.notes && <div style={{ gridColumn: '1 / -1' }}><DetailItem label="অতিরিক্ত নোট" value={loan.notes} /></div>}
         </div>
       )}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 8, borderTop: expanded ? '1px solid #f1f5f9' : 'none' }}>
+        {isPending && (
+          <button 
+            onClick={() => onComplete(loan)}
+            style={{ flex: 1, background: '#10b981', color: '#fff', border: 'none', borderRadius: 10, padding: '0.65rem', fontSize: 13, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+          >
+            <MdCheckCircle style={{ fontSize: 16 }} /> কমপ্লিট করুন
+          </button>
+        )}
+        <button 
+          onClick={() => onEdit(loan)}
+          style={{ width: 42, height: 42, background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          title="এডিট"
+        >
+          <MdEdit style={{ fontSize: 18 }} />
+        </button>
+        <button 
+          onClick={() => onDelete(loan)}
+          style={{ width: 42, height: 42, background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          title="মুছে ফেলুন"
+        >
+          <MdDelete style={{ fontSize: 18 }} />
+        </button>
+      </div>
     </div>
   )
 }
 
 const NewLoanPage = () => {
   const navigate = useNavigate()
-  const [tab, setTab] = useState('form') // 'form' | 'history'
-  const [form, setForm] = useState(initialForm)
+  const [activeTab, setActiveTab] = useState('pending')
+  const [loans, setLoans] = useState([])
   const [voGroups, setVoGroups] = useState([])
-  const [submitting, setSubmitting] = useState(false)
-  const [history, setHistory] = useState([])
-  const [histLoading, setHistLoading] = useState(false)
-  const [step, setStep] = useState(1) // 1=personal, 2=family, 3=loan
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editLoan, setEditLoan] = useState(null)
+  
+  // Confirmation state
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [confirmComplete, setConfirmComplete] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  const fetchVOs = useCallback(async () => {
-    const { data } = await supabase.from('vo_groups').select('*').order('vo_number')
-    setVoGroups(data || [])
-  }, [])
-
-  const fetchHistory = useCallback(async () => {
-    setHistLoading(true)
+  const fetchLoans = useCallback(async () => {
+    setLoading(true)
     try {
       const { data, error } = await supabase
         .from('loan_applications')
         .select('*')
         .order('created_at', { ascending: false })
       if (error) throw error
-      setHistory(data || [])
+      setLoans(data || [])
     } catch (err) {
-      toast.error('হিস্ট্রি লোড করতে ব্যর্থ')
+      toast.error('তথ্য লোড করতে ব্যর্থ')
       console.error(err)
     } finally {
-      setHistLoading(false)
+      setLoading(false)
     }
   }, [])
 
+  const fetchVOs = useCallback(async () => {
+    const { data } = await supabase.from('vo_groups').select('*').order('vo_number')
+    setVoGroups(data || [])
+  }, [])
+
   useEffect(() => {
+    fetchLoans()
     fetchVOs()
-    if (tab === 'history') fetchHistory()
-  }, [fetchVOs, fetchHistory, tab])
+  }, [fetchLoans, fetchVOs])
 
-  const handleChange = (key, val) => setForm(f => ({ ...f, [key]: val }))
+  const pendingLoans = loans.filter(l => l.status === 'pending')
+  const completedLoans = loans.filter(l => l.status === 'completed')
+  const activeData = activeTab === 'pending' ? pendingLoans : completedLoans
 
-  const handleSubmit = async () => {
-    if (!form.member_name.trim()) return toast.error('সদস্যের নাম দিন')
-    if (!form.vo_number) return toast.error('ভিও নম্বর দিন')
-    if (!form.member_number.trim()) return toast.error('সদস্য নম্বর দিন')
-    setSubmitting(true)
+  const handleAddOrUpdate = async (formData) => {
     try {
-      const { error } = await supabase.from('loan_applications').insert([{
-        ...form,
-        loan_amount: form.loan_amount ? parseFloat(form.loan_amount) : null,
-        total_members: form.total_members ? parseInt(form.total_members) : null,
-        total_children: form.total_children ? parseInt(form.total_children) : null,
-        school_going: form.school_going ? parseInt(form.school_going) : null,
-        under_five: form.under_five ? parseInt(form.under_five) : null,
-        vo_number: parseInt(form.vo_number),
-        status: 'completed',
-      }])
-      if (error) throw error
-      toast.success('লোন আবেদন সফলভাবে সংরক্ষিত হয়েছে!')
-      setForm(initialForm)
-      setStep(1)
-      setTab('history')
+      if (editLoan) {
+        const { error } = await supabase
+          .from('loan_applications')
+          .update({ ...formData, updated_at: new Date().toISOString() })
+          .eq('id', editLoan.id)
+        if (error) throw error
+        toast.success('আবেদন আপডেট করা হয়েছে')
+      } else {
+        const { error } = await supabase
+          .from('loan_applications')
+          .insert([formData])
+        if (error) throw error
+        toast.success('নতুন আবেদন জমা হয়েছে')
+      }
+      fetchLoans()
+      return true
     } catch (err) {
+      toast.error('ব্যর্থ হয়েছে')
       console.error(err)
-      toast.error('সংরক্ষণ করতে ব্যর্থ হয়েছে')
-    } finally {
-      setSubmitting(false)
+      return false
     }
   }
 
-  const fieldStyle = {
-    width: '100%', padding: '10px 12px', borderRadius: 10,
-    border: '1.5px solid #e2e8f0', fontSize: 13, outline: 'none',
-    fontFamily: "'Hind Siliguri', sans-serif", transition: 'border-color 0.2s',
-    boxSizing: 'border-box', background: '#fff', color: '#0f172a',
+  const handleDelete = async () => {
+    if (!confirmDelete) return
+    setActionLoading(true)
+    try {
+      const { error } = await supabase.from('loan_applications').delete().eq('id', confirmDelete.id)
+      if (error) throw error
+      toast.success('আবেদনটি মুছে ফেলা হয়েছে')
+      setConfirmDelete(null)
+      fetchLoans()
+    } catch (err) {
+      toast.error('মুছে ফেলতে ব্যর্থ')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
-  const labelStyle = {
-    fontSize: 12, fontWeight: 600, color: '#475569',
-    fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 4, display: 'block'
+  const handleComplete = async () => {
+    if (!confirmComplete) return
+    setActionLoading(true)
+    try {
+      const { error } = await supabase
+        .from('loan_applications')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .eq('id', confirmComplete.id)
+      if (error) throw error
+      toast.success('আবেদনটি কমপ্লিট হিস্ট্রিতে পাঠানো হয়েছে')
+      setConfirmComplete(null)
+      fetchLoans()
+    } catch (err) {
+      toast.error('আপডেট ব্যর্থ')
+    } finally {
+      setActionLoading(false)
+    }
   }
-
-  const FormField = ({ label, icon: Icon, children }) => (
-    <div style={{ marginBottom: 14 }}>
-      <label style={labelStyle}>
-        {Icon && <Icon style={{ fontSize: 13, marginRight: 5, verticalAlign: 'middle' }} />}
-        {label}
-      </label>
-      {children}
-    </div>
-  )
-
-  const stepInfo = [
-    { num: 1, title: 'ব্যক্তিগত তথ্য', icon: MdPerson },
-    { num: 2, title: 'পরিবারের তথ্য', icon: MdFamilyRestroom },
-    { num: 3, title: 'লোনের বিবরণ', icon: MdBadge },
-  ]
 
   return (
-    <>
-      <style>{`
-        .loan-tab { padding: 9px 22px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; font-family: 'Hind Siliguri', sans-serif; }
-        .loan-tab.active { background: linear-gradient(135deg,#4f46e5,#7c3aed); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.3); }
-        .loan-tab:not(.active) { background: #f1f5f9; color: #64748b; }
-        .loan-tab:not(.active):hover { background: #e0e7ff; color: #4f46e5; }
-        .step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; transition: all 0.3s; }
-        .step-line { flex: 1; height: 2px; margin: 0 6px; border-radius: 2px; transition: background 0.3s; }
-        input:focus, select:focus, textarea:focus { border-color: #4f46e5 !important; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-      `}</style>
-
-      <div className="page-enter">
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg,#4f46e5,#7c3aed)',
-          borderRadius: 20, padding: '1.25rem 1.4rem', marginBottom: '1.25rem',
-          boxShadow: '0 8px 28px rgba(79,70,229,0.3)', position: 'relative', overflow: 'hidden',
-          animation: 'slideUp 0.4s ease-out both',
-        }}>
-          <div style={{ position: 'absolute', top: -30, right: -30, width: 150, height: 150, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => navigate('/dashboard')}
-              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
-              <MdArrowBack style={{ fontSize: 20 }} />
-            </button>
-            <div>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 2 }}>নতুন লোন</h1>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', fontFamily: "'Hind Siliguri', sans-serif" }}>
-                নতুন লোন আবেদন তথ্য প্রবেশ করুন
-              </p>
-            </div>
+    <div className="page-enter" style={{ maxWidth: 900, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => navigate('/dashboard')} style={{ background: '#f1f5f9', border: 'none', borderRadius: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+            <MdArrowBack style={{ fontSize: 20 }} />
+          </button>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>লোন আবেদনসমূহ</h1>
+            <p style={{ fontSize: 13, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif" }}>নতুন লোন আবেদন ও হিস্ট্রি</p>
           </div>
         </div>
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: '1.25rem', animation: 'slideUp 0.4s ease-out 0.1s both' }}>
-          <button className={`loan-tab ${tab === 'form' ? 'active' : ''}`} onClick={() => setTab('form')}>
-            <MdAdd style={{ fontSize: 15, verticalAlign: 'middle', marginRight: 5 }} />
-            নতুন আবেদন
-          </button>
-          <button className={`loan-tab ${tab === 'history' ? 'active' : ''}`} onClick={() => setTab('history')}>
-            <MdHistory style={{ fontSize: 15, verticalAlign: 'middle', marginRight: 5 }} />
-            হিস্ট্রি ({history.length})
-          </button>
-        </div>
-
-        {tab === 'form' && (
-          <div style={{ animation: 'slideUp 0.35s ease-out both' }}>
-            {/* Step indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.25rem', background: '#fff', borderRadius: 14, padding: '0.85rem 1rem', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-              {stepInfo.map((s, idx) => (
-                <React.Fragment key={s.num}>
-                  <div
-                    onClick={() => setStep(s.num)}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: 4 }}
-                  >
-                    <div className="step-circle" style={{
-                      background: step === s.num ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : step > s.num ? '#10b981' : '#f1f5f9',
-                      color: step >= s.num ? '#fff' : '#94a3b8',
-                    }}>
-                      {step > s.num ? <MdCheck style={{ fontSize: 15 }} /> : <s.icon style={{ fontSize: 16 }} />}
-                    </div>
-                    <span style={{ fontSize: 9.5, fontWeight: 600, color: step >= s.num ? '#4f46e5' : '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", whiteSpace: 'nowrap' }}>{s.title}</span>
-                  </div>
-                  {idx < stepInfo.length - 1 && (
-                    <div className="step-line" style={{ background: step > s.num ? '#10b981' : '#e2e8f0' }} />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Form body */}
-            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #e2e8f0', padding: '1.2rem', boxShadow: '0 4px 16px rgba(0,0,0,0.05)', marginBottom: '1rem' }}>
-              {step === 1 && (
-                <>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <MdPerson style={{ fontSize: 16 }} /> ব্যক্তিগত তথ্য
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-                    <div style={{ gridColumn: '1/-1' }}>
-                      <FormField label="সদস্যের নাম *" icon={MdPerson}>
-                        <input style={fieldStyle} placeholder="সদস্যের পূর্ণ নাম" value={form.member_name} onChange={e => handleChange('member_name', e.target.value)} />
-                      </FormField>
-                    </div>
-                    <div style={{ gridColumn: '1/-1' }}>
-                      <FormField label="পূর্ণ ঠিকানা" icon={MdHome}>
-                        <textarea style={{ ...fieldStyle, resize: 'none', minHeight: 70 }} placeholder="গ্রাম, পোস্ট অফিস, উপজেলা, জেলা" value={form.full_address} onChange={e => handleChange('full_address', e.target.value)} />
-                      </FormField>
-                    </div>
-                    <FormField label="ভিও নম্বর *" icon={MdGroups}>
-                      <select style={fieldStyle} value={form.vo_number} onChange={e => handleChange('vo_number', e.target.value)}>
-                        <option value="">ভিও সিলেক্ট করুন</option>
-                        {voGroups.map(v => (
-                          <option key={v.id} value={v.vo_number}>VO-{v.vo_number} {v.vo_name ? `(${v.vo_name})` : ''}</option>
-                        ))}
-                      </select>
-                    </FormField>
-                    <FormField label="সদস্য নম্বর *" icon={MdBadge}>
-                      <input style={fieldStyle} placeholder="সদস্য নম্বর" value={form.member_number} onChange={e => handleChange('member_number', e.target.value)} />
-                    </FormField>
-                    <FormField label="জন্ম তারিখ" icon={MdCalendarToday}>
-                      <input type="date" style={fieldStyle} value={form.birth_date} onChange={e => handleChange('birth_date', e.target.value)} />
-                    </FormField>
-                    <FormField label="কার্ড টাইপ" icon={MdCreditCard}>
-                      <select style={fieldStyle} value={form.card_type} onChange={e => handleChange('card_type', e.target.value)}>
-                        {CARD_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </FormField>
-                    <div style={{ gridColumn: '1/-1' }}>
-                      <FormField label="আইডি নম্বর (NID / জন্ম নিবন্ধন)" icon={MdCreditCard}>
-                        <input style={fieldStyle} placeholder="আইডি নম্বর দিন" value={form.id_number} onChange={e => handleChange('id_number', e.target.value)} />
-                      </FormField>
-                    </div>
-                    <FormField label="পিতার নাম">
-                      <input style={fieldStyle} placeholder="পিতার নাম" value={form.father_name} onChange={e => handleChange('father_name', e.target.value)} />
-                    </FormField>
-                    <FormField label="মাতার নাম">
-                      <input style={fieldStyle} placeholder="মাতার নাম" value={form.mother_name} onChange={e => handleChange('mother_name', e.target.value)} />
-                    </FormField>
-                    <div style={{ gridColumn: '1/-1' }}>
-                      <FormField label="স্বামীর নাম">
-                        <input style={fieldStyle} placeholder="স্বামীর নাম (প্রযোজ্য হলে)" value={form.husband_name} onChange={e => handleChange('husband_name', e.target.value)} />
-                      </FormField>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {step === 2 && (
-                <>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <MdFamilyRestroom style={{ fontSize: 16 }} /> পরিবারের তথ্য
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-                    {[
-                      { key: 'total_members', label: 'মোট পরিবারের সদস্য', icon: MdFamilyRestroom, placeholder: 'যেমন: ৫' },
-                      { key: 'total_children', label: 'মোট সন্তান', icon: MdChildCare, placeholder: 'যেমন: ২' },
-                      { key: 'school_going', label: 'স্কুলে যায় কতজন', icon: MdSchool, placeholder: 'যেমন: ২' },
-                      { key: 'under_five', label: '৫ বছরের কম বয়সী', icon: MdChildCare, placeholder: 'যেমন: ১' },
-                    ].map(({ key, label, icon: Icon, placeholder }) => (
-                      <FormField key={key} label={label} icon={Icon}>
-                        <input type="number" min="0" style={fieldStyle} placeholder={placeholder} value={form[key]} onChange={e => handleChange(key, e.target.value)} />
-                      </FormField>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {step === 3 && (
-                <>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <MdBadge style={{ fontSize: 16 }} /> লোনের বিবরণ
-                  </p>
-                  <FormField label="লোনের পরিমাণ (টাকা)">
-                    <input type="number" min="0" style={fieldStyle} placeholder="যেমন: ১০০০০" value={form.loan_amount} onChange={e => handleChange('loan_amount', e.target.value)} />
-                  </FormField>
-                  <FormField label="লোনের উদ্দেশ্য">
-                    <input style={fieldStyle} placeholder="ব্যবসা, কৃষি, গৃহনির্মাণ..." value={form.loan_purpose} onChange={e => handleChange('loan_purpose', e.target.value)} />
-                  </FormField>
-                  <FormField label="অতিরিক্ত নোট">
-                    <textarea style={{ ...fieldStyle, resize: 'none', minHeight: 80 }} placeholder="যে কোনো অতিরিক্ত তথ্য..." value={form.notes} onChange={e => handleChange('notes', e.target.value)} />
-                  </FormField>
-                </>
-              )}
-            </div>
-
-            {/* Nav buttons */}
-            <div style={{ display: 'flex', gap: 10, justifyContent: step === 1 ? 'flex-end' : 'space-between' }}>
-              {step > 1 && (
-                <button onClick={() => setStep(s => s - 1)}
-                  style={{ padding: '11px 24px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontWeight: 700, cursor: 'pointer', fontSize: 14, fontFamily: "'Hind Siliguri', sans-serif', display: 'flex', alignItems: 'center', gap: 6" }}>
-                  ← পিছনে
-                </button>
-              )}
-              {step < 3 ? (
-                <button onClick={() => setStep(s => s + 1)}
-                  style={{ padding: '11px 24px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 14, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 14px rgba(79,70,229,0.35)' }}>
-                  পরবর্তী <MdArrowForward style={{ fontSize: 16 }} />
-                </button>
-              ) : (
-                <button onClick={handleSubmit} disabled={submitting}
-                  style={{ padding: '11px 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: 800, cursor: submitting ? 'not-allowed' : 'pointer', fontSize: 14, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(16,185,129,0.4)', opacity: submitting ? 0.7 : 1 }}>
-                  <MdCheck style={{ fontSize: 18 }} />
-                  {submitting ? 'সংরক্ষণ হচ্ছে...' : 'সম্পন্ন করুন ও সেভ করুন'}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {tab === 'history' && (
-          <div style={{ animation: 'slideUp 0.35s ease-out both' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif" }}>
-                মোট {history.length} টি লোন আবেদন
-              </p>
-              <button onClick={fetchHistory} style={{ background: '#f1f5f9', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#475569', fontFamily: "'Hind Siliguri', sans-serif" }}>
-                🔄 রিফ্রেশ
-              </button>
-            </div>
-            {histLoading ? (
-              <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif" }}>লোড হচ্ছে...</div>
-            ) : history.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem' }}>
-                <MdHistory style={{ fontSize: 50, color: '#c7d2fe', marginBottom: 12 }} />
-                <p style={{ color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", fontSize: 14 }}>কোনো হিস্ট্রি পাওয়া যায়নি</p>
-              </div>
-            ) : history.map(loan => <LoanHistoryCard key={loan.id} loan={loan} />)}
-          </div>
-        )}
+        <button onClick={() => { setEditLoan(null); setShowModal(true) }} className="btn-primary" style={{ padding: '0.65rem 1.1rem', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+          <MdAdd style={{ fontSize: 20 }} /> নতুন আবেদন
+        </button>
       </div>
-    </>
+
+      {/* Stats Summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ background: 'linear-gradient(135deg, #fef3c7, #fffbeb)', padding: '1rem', borderRadius: 16, border: '1.5px solid #fde68a', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MdPendingActions style={{ color: '#b45309' }} /></div>
+          <div><p style={{ fontSize: 10, color: '#92400e', margin: 0, fontFamily: "'Hind Siliguri', sans-serif" }}>অপেক্ষমাণ</p><p style={{ fontSize: 20, fontWeight: 800, color: '#92400e', margin: 0 }}>{pendingLoans.length}</p></div>
+        </div>
+        <div style={{ background: 'linear-gradient(135deg, #dcfce7, #f0fdf4)', padding: '1rem', borderRadius: 16, border: '1.5px solid #86efac', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MdCheckCircle style={{ color: '#166534' }} /></div>
+          <div><p style={{ fontSize: 10, color: '#166534', margin: 0, fontFamily: "'Hind Siliguri', sans-serif" }}>কমপ্লিট</p><p style={{ fontSize: 20, fontWeight: 800, color: '#166534', margin: 0 }}>{completedLoans.length}</p></div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', background: '#f1f5f9', padding: 4, borderRadius: 14 }}>
+        <button
+          onClick={() => setActiveTab('pending')}
+          style={{
+            flex: 1, padding: '0.75rem', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: activeTab === 'pending' ? '#fff' : 'transparent',
+            color: activeTab === 'pending' ? '#4f46e5' : '#64748b',
+            fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif", fontSize: 14,
+            boxShadow: activeTab === 'pending' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s'
+          }}
+        >
+          <MdPendingActions style={{ fontSize: 18 }} /> পেন্ডিং ({pendingLoans.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          style={{
+            flex: 1, padding: '0.75rem', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: activeTab === 'completed' ? '#fff' : 'transparent',
+            color: activeTab === 'completed' ? '#10b981' : '#64748b',
+            fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif", fontSize: 14,
+            boxShadow: activeTab === 'completed' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s'
+          }}
+        >
+          <MdHistory style={{ fontSize: 18 }} /> কমপ্লিট হিস্ট্রি
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+          {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 180, borderRadius: 16 }} />)}
+        </div>
+      ) : activeData.length === 0 ? (
+        <div style={{ background: '#fff', borderRadius: 20, padding: '4rem 2rem', textAlign: 'center', border: '1.5px dashed #e2e8f0' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 20, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+            <MdPendingActions style={{ fontSize: 32, color: '#cbd5e1' }} />
+          </div>
+          <h3 style={{ fontSize: 16, color: '#475569', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 700, margin: 0 }}>কোনো আবেদন নেই</h3>
+          <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 6 }}>
+            {activeTab === 'pending' ? 'এই মুহূর্তে কোনো অপেক্ষমাণ লোন আবেদন নেই' : 'কোনো কমপ্লিট হওয়া লোনের হিস্ট্রি নেই'}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+          {activeData.map(l => (
+            <LoanCard 
+              key={l.id} loan={l} 
+              onEdit={(data) => { setEditLoan(data); setShowModal(true) }}
+              onDelete={setConfirmDelete}
+              onComplete={setConfirmComplete}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Modals */}
+      <LoanFormModal 
+        isOpen={showModal} 
+        onClose={() => { setShowModal(false); setEditLoan(null) }} 
+        onSubmit={handleAddOrUpdate}
+        editData={editLoan}
+        voGroups={voGroups}
+      />
+
+      <ConfirmModal 
+        isOpen={!!confirmDelete} 
+        onClose={() => setConfirmDelete(null)} 
+        onConfirm={handleDelete}
+        title="আবেদন মুছে ফেলুন"
+        message={`আপনি কি নিশ্চিত যে "${confirmDelete?.member_name}"-এর লোন আবেদনটি মুছে ফেলতে চান?`}
+        confirmText="হ্যাঁ, মুছুন"
+        confirmColor="red"
+        loading={actionLoading}
+      />
+
+      <ConfirmModal 
+        isOpen={!!confirmComplete} 
+        onClose={() => setConfirmComplete(null)} 
+        onConfirm={handleComplete}
+        title="আবেদন সম্পন্ন করুন"
+        message={`"${confirmComplete?.member_name}"-এর লোন আবেদনটি কি কমপ্লিট হিস্ট্রিতে পাঠাতে চান?`}
+        confirmText="হ্যাঁ, সম্পন্ন করুন"
+        confirmColor="green"
+        loading={actionLoading}
+      />
+    </div>
   )
 }
 

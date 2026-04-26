@@ -6,7 +6,7 @@ import { getDaysOverdue, formatDate, formatMoney } from '../components/MemberCar
 import {
   MdArrowBack, MdWarning, MdGroups, MdPeople, MdAccessTime,
   MdPhone, MdAttachMoney, MdLocationOn, MdCalendarToday,
-  MdExpandMore, MdExpandLess, MdRefresh, MdChevronRight
+  MdExpandMore, MdExpandLess, MdRefresh, MdChevronRight, MdVerified
 } from 'react-icons/md'
 
 // ── Overdue badge color ─────────────────────────────────
@@ -38,6 +38,11 @@ const DueMemberRow = ({ member }) => {
           <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif" }}>
             {member.full_name}
           </span>
+          {member.is_confirmed && (
+            <span style={{ background: '#ecfdf5', color: '#10b981', fontSize: 10, fontWeight: 700, borderRadius: 6, padding: '1px 6px', fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 2 }}>
+              <MdVerified style={{ fontSize: 11 }} /> নিশ্চিত
+            </span>
+          )}
           {member.is_called && (
             <span style={{ background: '#dbeafe', color: '#1e40af', fontSize: 10, fontWeight: 700, borderRadius: 6, padding: '1px 6px', fontFamily: "'Hind Siliguri', sans-serif" }}>
               কল হয়েছে

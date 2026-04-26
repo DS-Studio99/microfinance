@@ -17,6 +17,7 @@ import CollectionsPage from './pages/CollectionsPage'
 import TotalDueAmountPage from './pages/TotalDueAmountPage'
 import NewLoanPage from './pages/NewLoanPage'
 import BookCollectionPage from './pages/BookCollectionPage'
+import NotesPage from './pages/NotesPage'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -117,6 +118,7 @@ const App = () => {
             <Route path="total-due-amount" element={<TotalDueAmountPage />} />
             <Route path="new-loan" element={<NewLoanPage />} />
             <Route path="book-collection" element={<BookCollectionPage />} />
+            <Route path="notes" element={<NotesPage />} />
           </Route>
 
           {/* Catch-all */}

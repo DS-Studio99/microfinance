@@ -18,8 +18,8 @@ const TotalDueAmountPage = () => {
       const [membersRes, voRes] = await Promise.all([
         supabase
           .from('members')
-          .select('id, full_name, vo_number, loan_amount, due_amount, phone_number, village')
-          .eq('is_due', true)
+          .select('id, full_name, vo_number, loan_amount, extra_amount, phone_number, village')
+          .gt('extra_amount', 0)
           .order('vo_number', { ascending: true }),
         supabase
           .from('vo_groups')
@@ -31,7 +31,7 @@ const TotalDueAmountPage = () => {
       if (voRes.error) throw voRes.error
 
       const members = membersRes.data || []
-      const total = members.reduce((sum, m) => sum + (m.due_amount || m.loan_amount || 0), 0)
+      const total = members.reduce((sum, m) => sum + (m.extra_amount || 0), 0)
       setDueMembers(members)
       setTotalDueAmount(total)
       setVoGroups(voRes.data || [])
@@ -49,7 +49,7 @@ const TotalDueAmountPage = () => {
     ? dueMembers
     : dueMembers.filter(m => String(m.vo_number) === selectedVO)
 
-  const filteredTotal = filtered.reduce((sum, m) => sum + (m.due_amount || m.loan_amount || 0), 0)
+  const filteredTotal = filtered.reduce((sum, m) => sum + (m.extra_amount || 0), 0)
 
   // Group by VO
   const grouped = filtered.reduce((acc, m) => {
@@ -231,7 +231,7 @@ const TotalDueAmountPage = () => {
                   </span>
                 </div>
                 <span style={{ fontWeight: 800, color: '#dc2626', fontSize: 15 }}>
-                  ৳ {members.reduce((s, m) => s + (m.due_amount || m.loan_amount || 0), 0).toLocaleString('bn-BD')}
+                  ৳ {members.reduce((s, m) => s + (m.extra_amount || 0), 0).toLocaleString('bn-BD')}
                 </span>
               </div>
               <div style={{ padding: '0.6rem 0.75rem' }}>
@@ -248,7 +248,7 @@ const TotalDueAmountPage = () => {
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <p style={{ fontWeight: 800, color: '#dc2626', fontSize: 16, lineHeight: 1 }}>
-                        ৳ {(m.due_amount || m.loan_amount || 0).toLocaleString('bn-BD')}
+                        ৳ {(m.extra_amount || 0).toLocaleString('bn-BD')}
                       </p>
                       <span style={{ background: '#fee2e2', color: '#dc2626', borderRadius: 8, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>বকেয়া</span>
                     </div>

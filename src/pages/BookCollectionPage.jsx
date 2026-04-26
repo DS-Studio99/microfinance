@@ -11,6 +11,7 @@ import {
 const BookCollectionPage = () => {
   const navigate = useNavigate()
   const [voGroups, setVoGroups] = useState([])
+  const [members, setMembers] = useState([])
   const [books, setBooks] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedVO, setSelectedVO] = useState('all')
@@ -22,13 +23,15 @@ const BookCollectionPage = () => {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [booksRes, voRes] = await Promise.all([
+      const [booksRes, voRes, membersRes] = await Promise.all([
         supabase.from('book_collections').select('*').order('created_at', { ascending: false }),
         supabase.from('vo_groups').select('*').order('vo_number'),
+        supabase.from('members').select('id, full_name, vo_number, village, member_number'),
       ])
       if (booksRes.error) throw booksRes.error
       setBooks(booksRes.data || [])
       setVoGroups(voRes.data || [])
+      setMembers(membersRes.data || [])
     } catch (err) {
       toast.error('তথ্য লোড করতে ব্যর্থ হয়েছে')
       console.error(err)
@@ -333,29 +336,39 @@ const BookCollectionPage = () => {
 
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', fontFamily: "'Hind Siliguri', sans-serif", display: 'block', marginBottom: 6 }}>
-                সদস্যের নাম *
-              </label>
-              <input
-                style={fieldStyle}
-                placeholder="সদস্যের পূর্ণ নাম লিখুন"
-                value={newBook.member_name}
-                onChange={e => setNewBook(b => ({ ...b, member_name: e.target.value }))}
-              />
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', fontFamily: "'Hind Siliguri', sans-serif", display: 'block', marginBottom: 6 }}>
                 ভিও নম্বর *
               </label>
               <select
                 style={fieldStyle}
                 value={newBook.vo_number}
-                onChange={e => setNewBook(b => ({ ...b, vo_number: e.target.value }))}
+                onChange={e => setNewBook(b => ({ ...b, vo_number: e.target.value, member_name: '' }))}
               >
                 <option value="">ভিও সিলেক্ট করুন</option>
                 {voGroups.map(v => (
                   <option key={v.id} value={v.vo_number}>VO-{v.vo_number} {v.vo_name ? `(${v.vo_name})` : ''}</option>
                 ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', fontFamily: "'Hind Siliguri', sans-serif", display: 'block', marginBottom: 6 }}>
+                সদস্যের নাম ও ঠিকানা *
+              </label>
+              <select
+                style={fieldStyle}
+                value={newBook.member_name}
+                onChange={e => setNewBook(b => ({ ...b, member_name: e.target.value }))}
+                disabled={!newBook.vo_number}
+              >
+                <option value="">{newBook.vo_number ? 'সদস্য সিলেক্ট করুন' : 'আগে ভিও সিলেক্ট করুন'}</option>
+                {members
+                  .filter(m => String(m.vo_number) === String(newBook.vo_number))
+                  .map(m => (
+                    <option key={m.id} value={m.full_name}>
+                      {m.full_name} {m.village ? `- ${m.village}` : ''} {m.member_number ? `(#${m.member_number})` : ''}
+                    </option>
+                  ))
+                }
               </select>
             </div>
 

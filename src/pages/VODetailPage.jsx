@@ -176,6 +176,7 @@ const VODetailPage = () => {
                   onEdit={setEditMember} onDelete={setDeleteMemberData}
                   onToggleDue={(id, v) => { quickUpdateField(id, 'is_due', v); fetchStats() }}
                   onToggleCalled={(id, v) => { quickUpdateField(id, 'is_called', v); fetchStats() }}
+                  onToggleConfirmed={(id, v) => { quickUpdateField(id, 'is_confirmed', v); fetchStats() }}
                   onMarkPaid={(member) => { markAsPaid(member); fetchStats() }}
                 />
               ))}
@@ -273,6 +274,7 @@ const VODetailPage = () => {
                     onEdit={setEditMember} onDelete={setDeleteMemberData}
                     onToggleDue={(id, v) => { quickUpdateField(id, 'is_due', v); fetchStats() }}
                     onToggleCalled={(id, v) => { quickUpdateField(id, 'is_called', v); fetchStats() }}
+                    onToggleConfirmed={(id, v) => { quickUpdateField(id, 'is_confirmed', v); fetchStats() }}
                     onMarkPaid={(member) => { markAsPaid(member); fetchStats() }}
                   />
                 ))}

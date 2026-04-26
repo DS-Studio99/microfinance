@@ -217,6 +217,7 @@ const AllMembersPage = () => {
                 onDelete={setDeleteMemberData}
                 onToggleDue={(id, val) => quickUpdateField(id, 'is_due', val)}
                 onToggleCalled={(id, val) => quickUpdateField(id, 'is_called', val)}
+                onToggleConfirmed={(id, val) => quickUpdateField(id, 'is_confirmed', val)}
                 onMarkPaid={markAsPaid}
               />
             ))}

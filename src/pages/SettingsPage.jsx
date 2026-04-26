@@ -1,9 +1,102 @@
-import React from 'react'
-import { MdSettings, MdEditDocument, MdSecurity, MdDelete } from 'react-icons/md'
+import React, { useState, useRef } from 'react'
+import { MdSettings, MdEditDocument, MdSecurity, MdDelete, MdCloudDownload, MdCloudUpload, MdWarning } from 'react-icons/md'
+import { supabase } from '../lib/supabase'
 import { useSettingsStore } from '../store/settingsStore'
 
 const SettingsPage = () => {
   const { allowEdit, allowDelete, toggleAllowEdit, toggleAllowDelete } = useSettingsStore()
+  const [backupLoading, setBackupLoading] = useState(false)
+  const [restoreLoading, setRestoreLoading] = useState(false)
+  const fileInputRef = useRef(null)
+
+  const handleBackup = async () => {
+    setBackupLoading(true)
+    try {
+      const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
+      const backupData = {}
+      
+      for (const table of tables) {
+        const { data, error } = await supabase.from(table).select('*')
+        if (error) {
+          console.warn(`Could not fetch ${table}`, error)
+          backupData[table] = []
+        } else {
+          backupData[table] = data || []
+        }
+      }
+      
+      const jsonString = JSON.stringify(backupData, null, 2)
+      const blob = new Blob([jsonString], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = `brac_backup_${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      
+      setTimeout(() => {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        alert('ব্যাকআপ সফলভাবে ডাউনলোড হয়েছে!')
+      }, 1000)
+    } catch (err) {
+      console.error(err)
+      alert('ব্যাকআপ তৈরি করতে সমস্যা হয়েছে।')
+    } finally {
+      setBackupLoading(false)
+    }
+  }
+
+  const handleRestore = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    if (!window.confirm('আপনি কি নিশ্চিত যে আপনি এই ব্যাকআপ থেকে ডাটা রিস্টোর করতে চান? এটি সাইটের বর্তমান ডাটা ওভাররাইট করবে!')) {
+      event.target.value = ''
+      return
+    }
+
+    setRestoreLoading(true)
+    const reader = new FileReader()
+    
+    reader.onload = async (e) => {
+      try {
+        const backupData = JSON.parse(e.target.result)
+        const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
+        
+        let successCount = 0
+        for (const table of tables) {
+          if (backupData[table] && backupData[table].length > 0) {
+            // using upsert to prevent unique constraint errors (assuming id/primary keys match)
+            const { error } = await supabase.from(table).upsert(backupData[table])
+            if (error) {
+              console.error(`Error restoring ${table}:`, error)
+            } else {
+              successCount++
+            }
+          }
+        }
+        
+        alert('রিস্টোর সফলভাবে সম্পন্ন হয়েছে! দয়া করে পেজটি রিফ্রেশ করুন।')
+        window.location.reload()
+      } catch (err) {
+        alert('ফাইলটি সঠিক নয় অথবা রিস্টোর করতে সমস্যা হয়েছে।')
+        console.error(err)
+      } finally {
+        setRestoreLoading(false)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      }
+    }
+    
+    reader.onerror = () => {
+      alert('ফাইলটি পড়তে সমস্যা হয়েছে।')
+      setRestoreLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+    
+    reader.readAsText(file)
+  }
 
   return (
     <div className="page-enter">
@@ -100,6 +193,79 @@ const SettingsPage = () => {
                 }} />
               </div>
             </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Backup & Restore Section */}
+      <div style={{
+        background: '#fff', borderRadius: 18, border: '1px solid #e8edf3',
+        padding: '1.25rem', boxShadow: '0 2px 10px rgba(15,23,42,0.05)',
+        marginTop: '1.25rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 15 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <MdCloudDownload style={{ color: '#3b82f6', fontSize: 20 }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', fontFamily: "'Hind Siliguri', sans-serif" }}>ডাটা ব্যাকআপ ও রিস্টোর</h3>
+            <p style={{ fontSize: 12.5, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 4, lineHeight: 1.5 }}>
+              আপনার সাইটের সকল তথ্য (সদস্য, ভিও, লোন, কালেকশন ও নোট) একটি ফাইলে ব্যাকআপ করে রাখতে পারবেন এবং পরবর্তীতে যেকোনো সময় তা রিস্টোর করতে পারবেন।
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+          {/* Backup Button */}
+          <button 
+            onClick={handleBackup}
+            disabled={backupLoading}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: '#3b82f6', color: '#fff', border: 'none',
+              padding: '0.85rem 1rem', borderRadius: 12, fontSize: 14, fontWeight: 700,
+              cursor: backupLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s',
+              fontFamily: "'Hind Siliguri', sans-serif", opacity: backupLoading ? 0.7 : 1
+            }}
+            onMouseEnter={e => { if (!backupLoading) e.currentTarget.style.background = '#2563eb' }}
+            onMouseLeave={e => { if (!backupLoading) e.currentTarget.style.background = '#3b82f6' }}
+          >
+            <MdCloudDownload style={{ fontSize: 20 }} />
+            {backupLoading ? 'ব্যাকআপ তৈরি হচ্ছে...' : 'ব্যাকআপ ডাউনলোড করুন'}
+          </button>
+
+          {/* Restore Button */}
+          <div style={{ position: 'relative' }}>
+            <input 
+              type="file" 
+              accept=".json" 
+              ref={fileInputRef}
+              onChange={handleRestore}
+              style={{ display: 'none' }}
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={restoreLoading}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: '#f8fafc', color: '#0f172a', border: '1.5px solid #e2e8f0',
+                padding: '0.85rem 1rem', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                cursor: restoreLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s',
+                fontFamily: "'Hind Siliguri', sans-serif", width: '100%', opacity: restoreLoading ? 0.7 : 1
+              }}
+              onMouseEnter={e => { if (!restoreLoading) e.currentTarget.style.background = '#f1f5f9' }}
+              onMouseLeave={e => { if (!restoreLoading) e.currentTarget.style.background = '#f8fafc' }}
+            >
+              <MdCloudUpload style={{ fontSize: 20, color: '#475569' }} />
+              {restoreLoading ? 'রিস্টোর হচ্ছে...' : 'ব্যাকআপ থেকে রিস্টোর করুন'}
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fffbeb', border: '1px solid #fde68a', padding: '0.6rem 0.8rem', borderRadius: 8 }}>
+             <MdWarning style={{ color: '#d97706', fontSize: 16 }} />
+             <p style={{ fontSize: 11.5, color: '#92400e', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
+               সতর্কতা: রিস্টোর করলে বর্তমান ডাটার সাথে ব্যাকআপ ডাটা যুক্ত হবে এবং ওভাররাইট হতে পারে।
+             </p>
           </div>
         </div>
       </div>

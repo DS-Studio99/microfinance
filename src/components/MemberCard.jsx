@@ -4,7 +4,7 @@ import {
   MdEdit, MdDelete, MdCalendarToday, MdLocationOn, MdAttachMoney,
   MdWarning, MdAccessTime, MdMoreVert, MdCurrencyExchange,
   MdEventAvailable, MdMessage, MdQuestionMark, MdClose,
-  MdSchedule, MdNotes,
+  MdSchedule, MdNotes, MdVerified,
 } from 'react-icons/md'
 import { RiWhatsappFill } from 'react-icons/ri'
 import { useSettingsStore } from '../store/settingsStore'
@@ -237,7 +237,7 @@ const InfoRow = ({ icon: Icon, iconColor = '#94a3b8', children, highlight }) => 
 // ─────────────────────────────────────────
 // Main Card
 // ─────────────────────────────────────────
-const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onMarkPaid }) => {
+const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onMarkPaid, onToggleConfirmed }) => {
   const { allowEdit, allowDelete } = useSettingsStore()
   const today = new Date().toISOString().split('T')[0]
   const isToday = member.loan_payment_date === today
@@ -299,11 +299,18 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
         {/* ── Name row ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 5 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.25, wordBreak: 'break-word' }}>
-              {member.full_name}
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+              <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.25, wordBreak: 'break-word', margin: 0 }}>
+                {member.full_name}
+              </h3>
+              {member.is_confirmed && (
+                <div title="নিশ্চিত কিস্তি পাবো" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: 20, height: 20, flexShrink: 0 }}>
+                  <MdVerified style={{ fontSize: 13 }} />
+                </div>
+              )}
+            </div>
             {member.father_name && (
-              <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 1 }}>স্বামী/পিতা: {member.father_name}</p>
+              <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", margin: '2px 0 0 0' }}>স্বামী/পিতা: {member.father_name}</p>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -476,6 +483,15 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
             label={member.is_called ? 'কল হয়েছে' : 'কল হয়নি'}
             icon={member.is_called ? MdPhone : MdPhoneDisabled}
             confirmMsg={member.is_called ? 'কলের চিহ্ন সরাবেন?' : 'কল সম্পন্ন হিসেবে চিহ্নিত করবেন?'}
+          />
+          <ToggleWithConfirm
+            id={`toggle-confirmed-${member.id}`}
+            on={member.is_confirmed}
+            onColor="green"
+            onClick={() => onToggleConfirmed(member.id, !member.is_confirmed)}
+            label={member.is_confirmed ? 'নিশ্চিত' : 'নিশ্চিত করুন'}
+            icon={MdVerified}
+            confirmMsg={member.is_confirmed ? 'নিশ্চিত মার্ক সরাবেন?' : 'নিশ্চিত পাবো হিসেবে চিহ্নিত করবেন?'}
           />
           {onMarkPaid && (member.loan_payment_date || member.expected_payment_date) && !member.loan_cleared_date && (
             <ActionWithConfirm

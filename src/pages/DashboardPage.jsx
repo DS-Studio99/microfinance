@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import {
   MdPeople, MdGroups, MdToday, MdWarning, MdEvent,
   MdArrowForward, MdRefresh, MdDashboard, MdPendingActions,
-  MdCheckCircle, MdAccessTime, MdAttachMoney, MdAddCard, MdBook,
+  MdCheckCircle, MdAccessTime, MdAttachMoney, MdAddCard, MdBook, MdEditNote,
 } from 'react-icons/md'
 import { RiShieldCheckLine } from 'react-icons/ri'
 import { HiSparkles } from 'react-icons/hi2'
@@ -31,7 +31,7 @@ const Counter = ({ target, loading }) => {
 }
 
 /* ── Stat card ── */
-const StatCard = ({ title, value, icon: Icon, g1, g2, glow, badge, onClick, loading, delay }) => (
+const StatCard = ({ title, value, subInfo, icon: Icon, g1, g2, glow, badge, onClick, loading, delay }) => (
   <div
     onClick={onClick}
     role={onClick ? 'button' : undefined}
@@ -58,8 +58,9 @@ const StatCard = ({ title, value, icon: Icon, g1, g2, glow, badge, onClick, load
           <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 20, padding: '2px 9px', fontSize: 10, fontWeight: 700, color: '#fff' }}>{badge}</span>
         )}
       </div>
-      <div style={{ fontSize: 34, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 5 }}>
+      <div style={{ fontSize: 34, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 5, display: 'flex', alignItems: 'baseline', gap: 6 }}>
         <Counter target={value} loading={loading} />
+        {subInfo && <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)', fontFamily: "'Hind Siliguri', sans-serif" }}>{subInfo}</span>}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.82)', fontFamily: "'Hind Siliguri', sans-serif" }}>{title}</p>
@@ -160,8 +161,8 @@ const DashboardPage = () => {
   const statCards = [
     { title: 'মোট সদস্য সংখ্যা', value: stats.totalMembers, icon: MdPeople, g1: '#2563eb', g2: '#1d4ed8', glow: '#2563eb', badge: 'সদস্য', onClick: () => navigate('/members'), delay: 0 },
     { title: 'মোট ভিও সংখ্যা', value: stats.totalVOs, icon: MdGroups, g1: '#059669', g2: '#047857', glow: '#059669', badge: 'গ্রুপ', onClick: () => navigate('/vo-list'), delay: 0.05 },
-    { title: 'আজকের কিস্তি', value: stats.todayPayments, icon: MdToday, g1: '#d97706', g2: '#b45309', glow: '#d97706', badge: 'আজ', onClick: () => navigate('/today-kisti'), delay: 0.1 },
-    { title: 'আগামীকালের কিস্তি', value: stats.tomorrowPayments, icon: MdEvent, g1: '#84cc16', g2: '#4d7c0f', glow: '#84cc16', badge: 'আগামীকাল', onClick: () => navigate('/tomorrow-kisti'), delay: 0.15 },
+    { title: 'আজকের কিস্তি', value: stats.todayPayments, subInfo: `(নিশ্চিত: ${stats.todayConfirmed})`, icon: MdToday, g1: '#d97706', g2: '#b45309', glow: '#d97706', badge: 'আজ', onClick: () => navigate('/today-kisti'), delay: 0.1 },
+    { title: 'আগামীকালের কিস্তি', value: stats.tomorrowPayments, subInfo: `(নিশ্চিত: ${stats.tomorrowConfirmed})`, icon: MdEvent, g1: '#84cc16', g2: '#4d7c0f', glow: '#84cc16', badge: 'আগামীকাল', onClick: () => navigate('/tomorrow-kisti'), delay: 0.15 },
     { title: 'মোট বকেয়া সদস্য', value: stats.dueMembers, icon: MdWarning, g1: '#dc2626', g2: '#b91c1c', glow: '#dc2626', badge: 'বকেয়া', onClick: () => navigate('/due-report'), delay: 0.2 },
     { title: 'পেন্ডিং কালেকশন', value: stats.pendingCollections, icon: MdPendingActions, g1: '#8b5cf6', g2: '#6d28d9', glow: '#8b5cf6', badge: 'পোস্টিং বাকি', onClick: () => navigate('/collections'), delay: 0.25 },
   ]
@@ -170,6 +171,7 @@ const DashboardPage = () => {
   const actionCards = [
     { title: 'নতুন লোন আবেদন', value: stats.totalLoanApplications, icon: MdAddCard, g1: '#0284c7', g2: '#0369a1', glow: '#0284c7', badge: 'লোন', onClick: () => navigate('/new-loan'), delay: 0.35 },
     { title: 'বই সংগ্রহ', value: stats.totalBooks, icon: MdBook, g1: '#0891b2', g2: '#0e7490', glow: '#0891b2', badge: 'বই', onClick: () => navigate('/book-collection'), delay: 0.4 },
+    { title: 'জরুরী নোট', value: 'নোট', icon: MdEditNote, g1: '#f59e0b', g2: '#d97706', glow: '#f59e0b', badge: 'নোট', onClick: () => navigate('/notes'), delay: 0.45 },
   ]
 
   return (
@@ -185,11 +187,11 @@ const DashboardPage = () => {
         @media (min-width: 1200px) { .db-stats-grid { grid-template-columns: repeat(6, 1fr); } }
         .db-action-grid {
           display: grid;
-          grid-template-columns: 1fr;
+          grid-template-columns: 1fr 1fr;
           gap: 12px;
           margin-bottom: 1.25rem;
         }
-        @media (min-width: 600px) { .db-action-grid { grid-template-columns: 1fr 1fr 1fr; } }
+        @media (min-width: 600px) { .db-action-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } }
         .db-bottom-grid {
           display: grid;
           grid-template-columns: 1fr;
