@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react'
-import { MdSettings, MdEditDocument, MdSecurity, MdDelete, MdCloudDownload, MdCloudUpload, MdWarning } from 'react-icons/md'
+import React, { useState, useRef, useEffect } from 'react'
+import { MdSettings, MdEditDocument, MdSecurity, MdDelete, MdCloudDownload, MdCloudUpload, MdWarning, MdCloudSync, MdVpnKey } from 'react-icons/md'
 import { supabase } from '../lib/supabase'
 import { useSettingsStore } from '../store/settingsStore'
 
@@ -7,7 +7,19 @@ const SettingsPage = () => {
   const { allowEdit, allowDelete, toggleAllowEdit, toggleAllowDelete } = useSettingsStore()
   const [backupLoading, setBackupLoading] = useState(false)
   const [restoreLoading, setRestoreLoading] = useState(false)
+  const [driveLoading, setDriveLoading] = useState(false)
+  const [googleClientId, setGoogleClientId] = useState(localStorage.getItem('google_client_id') || '')
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    if (!document.getElementById('google-gsi-script')) {
+      const script = document.createElement('script')
+      script.id = 'google-gsi-script'
+      script.src = 'https://accounts.google.com/gsi/client'
+      script.async = true
+      document.body.appendChild(script)
+    }
+  }, [])
 
   const handleBackup = async () => {
     setBackupLoading(true)
@@ -38,13 +50,85 @@ const SettingsPage = () => {
       setTimeout(() => {
         document.body.removeChild(a)
         window.URL.revokeObjectURL(url)
-        alert('ব্যাকআপ সফলভাবে ডাউনলোড হয়েছে!')
+        alert('ম্যানুয়াল ব্যাকআপ সফলভাবে ডাউনলোড হয়েছে!')
       }, 1000)
     } catch (err) {
       console.error(err)
       alert('ব্যাকআপ তৈরি করতে সমস্যা হয়েছে।')
     } finally {
       setBackupLoading(false)
+    }
+  }
+
+  // Google Drive Direct Backup
+  const handleDriveBackup = async () => {
+    if (!googleClientId) {
+      alert('দয়া করে প্রথমে নিচে Google Client ID সেট করুন।')
+      return
+    }
+    
+    if (!window.google || !window.google.accounts) {
+      alert('গুগল সার্ভিস লোড হতে সমস্যা হচ্ছে, দয়া করে ইন্টারনেট কানেকশন চেক করুন।')
+      return
+    }
+
+    setDriveLoading(true)
+    
+    try {
+      // 1. Fetch data
+      const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
+      const backupData = {}
+      for (const table of tables) {
+        const { data } = await supabase.from(table).select('*')
+        backupData[table] = data || []
+      }
+      
+      // 2. Init Google Token Client
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: googleClientId,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: async (tokenResponse) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            try {
+              // 3. Upload to Google Drive via multipart
+              const metadata = {
+                name: `brac_backup_${new Date().toISOString().split('T')[0]}.json`,
+                mimeType: 'application/json',
+              }
+              const form = new FormData()
+              form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
+              form.append('file', new Blob([JSON.stringify(backupData)], { type: 'application/json' }))
+
+              const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                body: form,
+              })
+              
+              if (res.ok) {
+                alert('সফলভাবে গুগল ড্রাইভে ব্যাকআপ সেভ হয়েছে!')
+              } else {
+                throw new Error('Upload failed')
+              }
+            } catch (err) {
+              console.error(err)
+              alert('গুগল ড্রাইভে আপলোড করতে সমস্যা হয়েছে।')
+            } finally {
+              setDriveLoading(false)
+            }
+          }
+        },
+        error_callback: () => {
+          alert('গুগল লগইন বাতিল করা হয়েছে।')
+          setDriveLoading(false)
+        }
+      })
+      
+      client.requestAccessToken()
+    } catch (err) {
+      console.error(err)
+      alert('ডাটা প্রস্তুত করতে সমস্যা হয়েছে।')
+      setDriveLoading(false)
     }
   }
 
@@ -216,7 +300,25 @@ const SettingsPage = () => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-          {/* Backup Button */}
+          {/* Drive Backup Button */}
+          <button 
+            onClick={handleDriveBackup}
+            disabled={driveLoading}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: '#0ea5e9', color: '#fff', border: 'none',
+              padding: '0.85rem 1rem', borderRadius: 12, fontSize: 14, fontWeight: 700,
+              cursor: driveLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s',
+              fontFamily: "'Hind Siliguri', sans-serif", opacity: driveLoading ? 0.7 : 1
+            }}
+            onMouseEnter={e => { if (!driveLoading) e.currentTarget.style.background = '#0284c7' }}
+            onMouseLeave={e => { if (!driveLoading) e.currentTarget.style.background = '#0ea5e9' }}
+          >
+            <MdCloudSync style={{ fontSize: 20 }} />
+            {driveLoading ? 'ড্রাইভে আপলোড হচ্ছে...' : 'সরাসরি গুগল ড্রাইভে ব্যাকআপ করুন'}
+          </button>
+
+          {/* Manual Backup Button */}
           <button 
             onClick={handleBackup}
             disabled={backupLoading}
@@ -231,7 +333,7 @@ const SettingsPage = () => {
             onMouseLeave={e => { if (!backupLoading) e.currentTarget.style.background = '#3b82f6' }}
           >
             <MdCloudDownload style={{ fontSize: 20 }} />
-            {backupLoading ? 'ব্যাকআপ তৈরি হচ্ছে...' : 'ব্যাকআপ ডাউনলোড করুন'}
+            {backupLoading ? 'ম্যানুয়াল ব্যাকআপ তৈরি হচ্ছে...' : 'ম্যানুয়াল ব্যাকআপ ডাউনলোড করুন'}
           </button>
 
           {/* Restore Button */}
@@ -257,7 +359,7 @@ const SettingsPage = () => {
               onMouseLeave={e => { if (!restoreLoading) e.currentTarget.style.background = '#f8fafc' }}
             >
               <MdCloudUpload style={{ fontSize: 20, color: '#475569' }} />
-              {restoreLoading ? 'রিস্টোর হচ্ছে...' : 'ব্যাকআপ থেকে রিস্টোর করুন'}
+              {restoreLoading ? 'রিস্টোর হচ্ছে...' : 'যেকোনো ব্যাকআপ থেকে রিস্টোর করুন'}
             </button>
           </div>
           
@@ -267,6 +369,36 @@ const SettingsPage = () => {
                সতর্কতা: রিস্টোর করলে বর্তমান ডাটার সাথে ব্যাকআপ ডাটা যুক্ত হবে এবং ওভাররাইট হতে পারে।
              </p>
           </div>
+        </div>
+
+        {/* Google Client ID Setup */}
+        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e8edf3' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#475569', marginBottom: 8, fontFamily: "'Hind Siliguri', sans-serif" }}>
+            <MdVpnKey style={{ fontSize: 16 }} /> Google Client ID (ড্রাইভ ব্যাকআপের জন্য)
+          </label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input 
+              type="text" 
+              value={googleClientId}
+              onChange={e => setGoogleClientId(e.target.value)}
+              placeholder="আপনার Google OAuth Client ID দিন..."
+              className="field-input"
+              style={{ flex: 1, padding: '0.75rem 1rem', fontSize: 13 }}
+            />
+            <button 
+              onClick={() => {
+                localStorage.setItem('google_client_id', googleClientId)
+                alert('Client ID সেভ করা হয়েছে!')
+              }}
+              className="btn-primary"
+              style={{ padding: '0 1.25rem', borderRadius: 12, fontSize: 13 }}
+            >
+              সেভ করুন
+            </button>
+          </div>
+          <p style={{ fontSize: 11, color: '#64748b', marginTop: 8, fontFamily: "'Hind Siliguri', sans-serif" }}>
+             ড্রাইভে অটো আপলোড কাজ করার জন্য গুগল ক্লাউড কনসোল থেকে একটি OAuth Client ID তৈরি করে এখানে বসাতে হবে।
+          </p>
         </div>
       </div>
     </div>

@@ -33,12 +33,26 @@ const NotesPage = () => {
         .select('*')
         .order('created_at', { ascending: false })
       
-      // Fallback to local storage if DB fails (e.g. table not created yet)
+      // Check if DB fetch was successful
       if (error) {
         console.log('Notes table might not exist, falling back to localStorage')
         const local = localStorage.getItem('brac_notes')
         setNotes(local ? JSON.parse(local) : [])
       } else {
+        // If DB has no notes but we have some locally, it means they failed to upload earlier.
+        // Let's bring them over so they aren't lost.
+        if ((!data || data.length === 0) && localStorage.getItem('brac_notes')) {
+           const local = JSON.parse(localStorage.getItem('brac_notes'))
+           if (local.length > 0) {
+             setNotes(local)
+             // Try to push them to DB in background
+             supabase.from('notes').insert(local.map(n => {
+                const { id, ...rest } = n // remove local ID to let DB generate UUID
+                return rest
+             })).then(() => localStorage.removeItem('brac_notes'))
+             return
+           }
+        }
         setNotes(data || [])
       }
     } catch (err) {
@@ -57,10 +71,10 @@ const NotesPage = () => {
     if (!editingNote || !editingNote.title) return
 
     const isNew = !editingNote.id
+    const { id, created_at, updated_at, ...restNote } = editingNote
     const noteData = {
-      ...editingNote,
-      color: editingNote.color || COLORS[0].bg,
-      updated_at: new Date().toISOString()
+      ...restNote,
+      color: editingNote.color || COLORS[0].bg
     }
 
     try {
