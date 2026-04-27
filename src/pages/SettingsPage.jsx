@@ -31,7 +31,7 @@ const SettingsPage = () => {
   const handleBackup = async () => {
     setBackupLoading(true)
     try {
-      const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
+      const tables = ['vo_groups', 'members', 'collections', 'loan_applications', 'book_collections', 'notes']
       const backupData = {}
       
       for (const table of tables) {
@@ -82,7 +82,7 @@ const SettingsPage = () => {
     reader.onload = async (e) => {
       try {
         const backupData = JSON.parse(e.target.result)
-        const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
+        const tables = ['vo_groups', 'members', 'collections', 'loan_applications', 'book_collections', 'notes']
         
         let successCount = 0
         for (const table of tables) {

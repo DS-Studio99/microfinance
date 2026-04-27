@@ -116,7 +116,8 @@ export const useDashboardStats = () => {
     totalDueAmount: 0,
     totalLoanApplications: 0,
     totalBooks: 0,
-    totalNotes: 0
+    totalNotes: 0,
+    unwrittenKhata: 0
   })
   const [loading, setLoading] = useState(true)
 
@@ -206,6 +207,16 @@ export const useDashboardStats = () => {
         totalNotes = count || 0
       } catch (e) { console.warn('notes table not yet available') }
 
+      // Fetch unwritten khata count
+      let unwrittenKhata = 0
+      try {
+        const { count } = await supabase
+          .from('collections')
+          .select('*', { count: 'exact', head: true })
+          .or('khata_written.eq.false,khata_written.is.null')
+        unwrittenKhata = count || 0
+      } catch (e) { console.warn('unwritten khata fetch failed') }
+
       setStats({
         totalMembers: membersRes.count || 0,
         totalVOs: voRes.count || 0,
@@ -218,7 +229,8 @@ export const useDashboardStats = () => {
         totalDueAmount,
         totalLoanApplications,
         totalBooks,
-        totalNotes
+        totalNotes,
+        unwrittenKhata
       })
     } catch (err) {
       console.error('Stats fetch error:', err)

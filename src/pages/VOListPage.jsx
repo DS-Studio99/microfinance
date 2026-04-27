@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVOGroups } from '../hooks/useVOGroups'
 import { supabase } from '../lib/supabase'
-import { MdAdd, MdGroups, MdPeople, MdArrowForward, MdClose, MdDelete, MdSearch, MdEdit } from 'react-icons/md'
+import { MdAdd, MdGroups, MdPeople, MdArrowForward, MdClose, MdDelete, MdSearch, MdEdit, MdCalendarToday, MdMoreVert } from 'react-icons/md'
 import { useSettingsStore } from '../store/settingsStore'
 import { useEffect } from 'react'
 import toast from 'react-hot-toast'
@@ -16,8 +16,81 @@ const gradients = [
   ['#7c3aed','#6d28d9'],
 ]
 
+const BANGLA_DAYS = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার']
+
+function formatDateBangla(dateStr) {
+  if (!dateStr) return null
+  const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d)) return null
+  const day = BANGLA_DAYS[d.getDay()]
+  // Format: DD/MM
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return { date: `${dd}/${mm}`, day, full: dateStr }
+}
+
+/* ── 3-dot Menu for VO Card ── */
+const VOCardMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
+  const [open, setOpen] = useState(false)
+  const ref = useRef()
+
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  if (!allowEdit && !allowDelete) return null
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
+        style={{
+          width: 28, height: 28, borderRadius: 7,
+          background: open ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+        onMouseLeave={e => { if (!open) e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+      >
+        <MdMoreVert style={{ fontSize: 16 }} />
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 32, right: 0, zIndex: 300,
+          background: '#fff', borderRadius: 12,
+          boxShadow: '0 8px 30px rgba(15,23,42,0.2)',
+          border: '1px solid #e8edf3', overflow: 'hidden', minWidth: 140,
+          animation: 'scaleUp 0.15s ease-out',
+        }}>
+          {allowEdit && (
+            <button onClick={e => { e.stopPropagation(); setOpen(false); onEdit() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#4338ca', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#eef2ff'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              <MdEdit style={{ fontSize: 16 }} />সম্পাদনা
+            </button>
+          )}
+          {allowEdit && allowDelete && <div style={{ height: 1, background: '#f1f5f9' }} />}
+          {allowDelete && (
+            <button onClick={e => { e.stopPropagation(); setOpen(false); onDelete() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#dc2626', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              <MdDelete style={{ fontSize: 16 }} />মুছে ফেলুন
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const VOCard = ({ vo, memberCount, onDelete, onEdit, onClick, idx, allowEdit, allowDelete }) => {
   const [g1, g2] = gradients[idx % gradients.length]
+  const kistiInfo = formatDateBangla(vo.next_kisti_date)
+
   return (
     <div
       onClick={onClick}
@@ -36,70 +109,70 @@ const VOCard = ({ vo, memberCount, onDelete, onEdit, onClick, idx, allowEdit, al
       <div style={{ position: 'absolute', top: -24, right: -24, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
       <div style={{ position: 'absolute', bottom: -16, right: 10, width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '1.2rem' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: '1rem 1.1rem' }}>
         {/* top row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.8rem' }}>
-          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 12, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <MdGroups style={{ color: '#fff', fontSize: 24 }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <MdGroups style={{ color: '#fff', fontSize: 22 }} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.1, margin: 0 }}>
+                ভিও - {String(vo.vo_number).padStart(2, '0')}
+              </h2>
+              {vo.vo_name && (
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
+                  {vo.vo_name}
+                </p>
+              )}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {allowEdit && (
-              <button
-                onClick={e => { e.stopPropagation(); onEdit() }}
-                style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: 'rgba(255,255,255,0.15)',
-                  border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', transition: 'background 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-                title="সম্পাদনা করুন"
-              >
-                <MdEdit style={{ fontSize: 16 }} />
-              </button>
-            )}
-            {allowDelete && (
-              <button
-                onClick={e => { e.stopPropagation(); onDelete() }}
-                style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: 'rgba(255,255,255,0.15)',
-                  border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', transition: 'background 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,100,100,0.4)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-                title="মুছে ফেলুন"
-              >
-                <MdDelete style={{ fontSize: 16 }} />
-              </button>
-            )}
-          </div>
+          <VOCardMenu onEdit={onEdit} onDelete={onDelete} allowEdit={allowEdit} allowDelete={allowDelete} />
         </div>
 
-        {/* VO number */}
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.2, marginBottom: 2 }}>
-          ভিও নং- {String(vo.vo_number).padStart(2, '0')}
-        </h2>
-        {vo.vo_name && (
-          <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.8)', fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 12 }}>
-            {vo.vo_name}
-          </p>
+        {/* Next kisti date highlight */}
+        {kistiInfo ? (
+          <div style={{
+            background: 'rgba(255,255,255,0.18)',
+            borderRadius: 10, padding: '5px 10px',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            marginBottom: '0.6rem',
+            border: '1px solid rgba(255,255,255,0.25)',
+            backdropFilter: 'blur(4px)'
+          }}>
+            <MdCalendarToday style={{ color: '#fde68a', fontSize: 13 }} />
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#fde68a', letterSpacing: 0.3 }}>
+              {kistiInfo.date}
+            </span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontFamily: "'Hind Siliguri', sans-serif" }}>
+              ({kistiInfo.day})
+            </span>
+          </div>
+        ) : (
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: 10, padding: '4px 10px',
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            marginBottom: '0.6rem',
+            border: '1px dashed rgba(255,255,255,0.2)'
+          }}>
+            <MdCalendarToday style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }} />
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: "'Hind Siliguri', sans-serif" }}>
+              তারিখ সেট নেই
+            </span>
+          </div>
         )}
 
         {/* footer row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: vo.vo_name ? 0 : 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '4px 10px' }}>
-            <MdPeople style={{ color: '#fff', fontSize: 14 }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif" }}>
-              {memberCount} জন সদস্য
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '3px 9px' }}>
+            <MdPeople style={{ color: '#fff', fontSize: 13 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif" }}>
+              {memberCount} জন
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'rgba(255,255,255,0.85)', fontSize: 12, fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 600 }}>
-            বিস্তারিত <MdArrowForward style={{ fontSize: 14 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'rgba(255,255,255,0.85)', fontSize: 11, fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 600 }}>
+            বিস্তারিত <MdArrowForward style={{ fontSize: 13 }} />
           </div>
         </div>
       </div>
@@ -107,20 +180,63 @@ const VOCard = ({ vo, memberCount, onDelete, onEdit, onClick, idx, allowEdit, al
   )
 }
 
+/* ── Centered Modal Wrapper ── */
+const CenteredModal = ({ onClose, children }) => (
+  <div
+    style={{
+      position: 'fixed', inset: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(5px)',
+      padding: '1rem'
+    }}
+    onClick={e => { if (e.target === e.currentTarget) onClose() }}
+  >
+    <div style={{
+      background: '#fff', width: '100%', maxWidth: 420,
+      borderRadius: 24,
+      animation: 'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+      boxShadow: '0 24px 60px rgba(15,23,42,0.25)',
+      overflow: 'hidden',
+    }}>
+      {children}
+    </div>
+  </div>
+)
+
+const ModalHeader = ({ icon, title, onClose }) => (
+  <div style={{
+    background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+    padding: '1.1rem 1.25rem',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+  }}>
+    <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+      {icon} {title}
+    </h2>
+    <button
+      onClick={onClose}
+      style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.12)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}
+      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
+    >
+      <MdClose style={{ fontSize: 16 }} />
+    </button>
+  </div>
+)
+
 const VOListPage = () => {
   const navigate = useNavigate()
   const { voGroups, loading, addVOGroup, updateVOGroup, deleteVOGroup } = useVOGroups()
   const { allowEdit, allowDelete } = useSettingsStore()
   const [memberCounts, setMemberCounts] = useState({})
-  
+
   const [showAddModal, setShowAddModal] = useState(false)
   const [newVO, setNewVO] = useState({ vo_number: '', vo_name: '' })
   const [addLoading, setAddLoading] = useState(false)
-  
+
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingVO, setEditingVO] = useState(null)
   const [editLoading, setEditLoading] = useState(false)
-  
+
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -203,7 +319,7 @@ const VOListPage = () => {
         {loading && (
           <div className="vo-grid">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 160 }} />
+              <div key={i} className="skeleton" style={{ height: 150 }} />
             ))}
           </div>
         )}
@@ -241,130 +357,90 @@ const VOListPage = () => {
           </div>
         )}
 
-        {/* ── Add VO Modal (bottom sheet) ── */}
+        {/* ── Add VO Modal (centered) ── */}
         {showAddModal && (
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(5px)' }}
-            onClick={e => { if (e.target === e.currentTarget) setShowAddModal(false) }}
-          >
-            <div style={{
-              background: '#fff', width: '100%', maxWidth: 480,
-              borderRadius: '24px 24px 0 0',
-              animation: 'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)',
-              boxShadow: '0 -8px 40px rgba(15,23,42,0.2)',
-              overflow: 'hidden',
-            }}>
-              {/* Handle */}
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e2e8f0' }} />
+          <CenteredModal onClose={() => setShowAddModal(false)}>
+            <ModalHeader
+              icon={<MdGroups style={{ color: '#a5b4fc', fontSize: 20 }} />}
+              title="নতুন ভিও যোগ করুন"
+              onClose={() => setShowAddModal(false)}
+            />
+            <form onSubmit={handleAddVO} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label className="field-label">ভিও নম্বর <span style={{ color: '#ef4444' }}>*</span></label>
+                <input
+                  id="new-vo-number"
+                  type="number"
+                  value={newVO.vo_number}
+                  onChange={e => setNewVO(p => ({ ...p, vo_number: e.target.value }))}
+                  placeholder="যেমন: ১, ২, ৩..."
+                  className="field-input"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                  autoFocus
+                />
               </div>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem 0.75rem' }}>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MdGroups style={{ color: '#4f46e5', fontSize: 22 }} />
-                  নতুন ভিও যোগ করুন
-                </h2>
-                <button onClick={() => setShowAddModal(false)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#f1f5f9', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <MdClose style={{ fontSize: 16 }} />
+              <div>
+                <label className="field-label">ভিও নাম (ঐচ্ছিক)</label>
+                <input
+                  id="new-vo-name"
+                  type="text"
+                  value={newVO.vo_name}
+                  onChange={e => setNewVO(p => ({ ...p, vo_name: e.target.value }))}
+                  placeholder="বিবরণমূলক নাম"
+                  className="field-input"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+                <button id="cancel-vo-btn" type="button" onClick={() => setShowAddModal(false)} className="btn-ghost" style={{ flex: 1, padding: '0.8rem' }}>বাতিল</button>
+                <button id="submit-vo-btn" type="submit" disabled={addLoading} className="btn-primary" style={{ flex: 1, padding: '0.8rem' }}>
+                  {addLoading ? <><div className="spinner" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%' }} />যোগ হচ্ছে...</> : 'ভিও যোগ করুন'}
                 </button>
               </div>
-              {/* Form */}
-              <form onSubmit={handleAddVO} style={{ padding: '0.5rem 1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div>
-                  <label className="field-label">ভিও নম্বর <span style={{ color: '#ef4444' }}>*</span></label>
-                  <input
-                    id="new-vo-number"
-                    type="number"
-                    value={newVO.vo_number}
-                    onChange={e => setNewVO(p => ({ ...p, vo_number: e.target.value }))}
-                    placeholder="যেমন: ১, ২, ৩..."
-                    className="field-input"
-                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-                  />
-                </div>
-                <div>
-                  <label className="field-label">ভিও নাম (ঐচ্ছিক)</label>
-                  <input
-                    id="new-vo-name"
-                    type="text"
-                    value={newVO.vo_name}
-                    onChange={e => setNewVO(p => ({ ...p, vo_name: e.target.value }))}
-                    placeholder="বিবরণমূলক নাম"
-                    className="field-input"
-                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
-                  <button id="cancel-vo-btn" type="button" onClick={() => setShowAddModal(false)} className="btn-ghost" style={{ flex: 1, padding: '0.8rem' }}>বাতিল</button>
-                  <button id="submit-vo-btn" type="submit" disabled={addLoading} className="btn-primary" style={{ flex: 1, padding: '0.8rem' }}>
-                    {addLoading ? <><div className="spinner" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%' }} />যোগ হচ্ছে...</> : 'ভিও যোগ করুন'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+            </form>
+          </CenteredModal>
         )}
 
-        {/* ── Edit VO Modal ── */}
+        {/* ── Edit VO Modal (centered) ── */}
         {showEditModal && editingVO && (
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(5px)' }}
-            onClick={e => { if (e.target === e.currentTarget) setShowEditModal(false) }}
-          >
-            <div style={{
-              background: '#fff', width: '100%', maxWidth: 480,
-              borderRadius: '24px 24px 0 0',
-              animation: 'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)',
-              boxShadow: '0 -8px 40px rgba(15,23,42,0.2)',
-              overflow: 'hidden',
-            }}>
-              {/* Handle */}
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e2e8f0' }} />
+          <CenteredModal onClose={() => setShowEditModal(false)}>
+            <ModalHeader
+              icon={<MdEdit style={{ color: '#a5b4fc', fontSize: 20 }} />}
+              title="ভিও সম্পাদনা করুন"
+              onClose={() => setShowEditModal(false)}
+            />
+            <form onSubmit={handleUpdateVO} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label className="field-label">ভিও নম্বর <span style={{ color: '#ef4444' }}>*</span></label>
+                <input
+                  id="edit-vo-number"
+                  type="number"
+                  value={editingVO.vo_number}
+                  onChange={e => setEditingVO(p => ({ ...p, vo_number: e.target.value }))}
+                  className="field-input"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                  autoFocus
+                />
               </div>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem 0.75rem' }}>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MdEdit style={{ color: '#4f46e5', fontSize: 22 }} />
-                  ভিও সম্পাদনা করুন
-                </h2>
-                <button onClick={() => setShowEditModal(false)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#f1f5f9', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <MdClose style={{ fontSize: 16 }} />
+              <div>
+                <label className="field-label">ভিও নাম (ঐচ্ছিক)</label>
+                <input
+                  id="edit-vo-name"
+                  type="text"
+                  value={editingVO.vo_name || ''}
+                  onChange={e => setEditingVO(p => ({ ...p, vo_name: e.target.value }))}
+                  className="field-input"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+                <button id="cancel-edit-vo-btn" type="button" onClick={() => setShowEditModal(false)} className="btn-ghost" style={{ flex: 1, padding: '0.8rem' }}>বাতিল</button>
+                <button id="submit-edit-vo-btn" type="submit" disabled={editLoading} className="btn-primary" style={{ flex: 1, padding: '0.8rem' }}>
+                  {editLoading ? <><div className="spinner" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%' }} />সেভ হচ্ছে...</> : 'আপডেট করুন'}
                 </button>
               </div>
-              {/* Form */}
-              <form onSubmit={handleUpdateVO} style={{ padding: '0.5rem 1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div>
-                  <label className="field-label">ভিও নম্বর <span style={{ color: '#ef4444' }}>*</span></label>
-                  <input
-                    id="edit-vo-number"
-                    type="number"
-                    value={editingVO.vo_number}
-                    onChange={e => setEditingVO(p => ({ ...p, vo_number: e.target.value }))}
-                    className="field-input"
-                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-                  />
-                </div>
-                <div>
-                  <label className="field-label">ভিও নাম (ঐচ্ছিক)</label>
-                  <input
-                    id="edit-vo-name"
-                    type="text"
-                    value={editingVO.vo_name || ''}
-                    onChange={e => setEditingVO(p => ({ ...p, vo_name: e.target.value }))}
-                    className="field-input"
-                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
-                  <button id="cancel-edit-vo-btn" type="button" onClick={() => setShowEditModal(false)} className="btn-ghost" style={{ flex: 1, padding: '0.8rem' }}>বাতিল</button>
-                  <button id="submit-edit-vo-btn" type="submit" disabled={editLoading} className="btn-primary" style={{ flex: 1, padding: '0.8rem' }}>
-                    {editLoading ? <><div className="spinner" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%' }} />সেভ হচ্ছে...</> : 'আপডেট করুন'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+            </form>
+          </CenteredModal>
         )}
       </div>
     </>

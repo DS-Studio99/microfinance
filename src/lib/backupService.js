@@ -2,9 +2,9 @@ import { supabase } from './supabase'
 
 // 1. Generate Backup JSON String
 export const generateBackupData = async () => {
-  const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
+  const tables = ['vo_groups', 'members', 'collections', 'loan_applications', 'book_collections', 'notes']
   const backupData = {}
-  
+
   for (const table of tables) {
     const { data, error } = await supabase.from(table).select('*')
     if (error) {
@@ -14,7 +14,7 @@ export const generateBackupData = async () => {
       backupData[table] = data || []
     }
   }
-  
+
   return JSON.stringify(backupData, null, 2)
 }
 
@@ -47,7 +47,7 @@ export const fetchCloudBackupData = async (fileName) => {
 
 // 5. Restore Backup Data to DB
 export const restoreDataToDB = async (backupData) => {
-  const tables = ['vo_groups', 'members', 'loan_applications', 'book_collections', 'notes']
+  const tables = ['vo_groups', 'members', 'collections', 'loan_applications', 'book_collections', 'notes']
   let successCount = 0
   for (const table of tables) {
     if (backupData[table] && backupData[table].length > 0) {
@@ -65,11 +65,11 @@ export const cleanupOldBackups = async () => {
     const files = await getCloudBackups()
     const tenDaysAgo = new Date()
     tenDaysAgo.setDate(tenDaysAgo.getDate() - 10)
-    
+
     const filesToDelete = files
       .filter(file => new Date(file.created_at) < tenDaysAgo)
       .map(file => file.name)
-      
+
     if (filesToDelete.length > 0) {
       await supabase.storage.from('backups').remove(filesToDelete)
       console.log('Cleaned up old backups:', filesToDelete)
@@ -84,15 +84,15 @@ export const runAutoBackupRoutine = async () => {
   try {
     const todayStr = new Date().toISOString().split('T')[0]
     const lastBackup = localStorage.getItem('last_auto_backup_date')
-    
+
     if (lastBackup !== todayStr) {
       console.log('Starting daily auto backup...')
       const jsonString = await generateBackupData()
       const fileName = `auto_backup_${todayStr}.json`
-      
+
       await uploadBackupToCloud(jsonString, fileName)
       await cleanupOldBackups()
-      
+
       localStorage.setItem('last_auto_backup_date', todayStr)
       console.log('Auto backup completed successfully!')
     }

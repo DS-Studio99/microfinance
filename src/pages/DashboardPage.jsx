@@ -172,6 +172,7 @@ const DashboardPage = () => {
     { title: 'নতুন লোন আবেদন', value: stats.totalLoanApplications, icon: MdAddCard, g1: '#0284c7', g2: '#0369a1', glow: '#0284c7', badge: 'লোন', onClick: () => navigate('/new-loan'), delay: 0.35 },
     { title: 'বই সংগ্রহ', value: stats.totalBooks, icon: MdBook, g1: '#0891b2', g2: '#0e7490', glow: '#0891b2', badge: 'বই', onClick: () => navigate('/book-collection'), delay: 0.4 },
     { title: 'জরুরী নোট', value: stats.totalNotes, icon: MdEditNote, g1: '#f59e0b', g2: '#d97706', glow: '#f59e0b', badge: 'নোট', onClick: () => navigate('/notes'), delay: 0.45 },
+    { title: 'খাতা লেখা হয়নি', value: stats.unwrittenKhata, icon: MdBook, g1: '#ea580c', g2: '#c2410c', glow: '#ea580c', badge: 'খাতা বাকি', onClick: () => navigate('/unwritten-khata'), delay: 0.5 },
   ]
 
   return (
@@ -205,9 +206,9 @@ const DashboardPage = () => {
         {/* ── Welcome Banner ── */}
         <div style={{
           background: 'linear-gradient(135deg,#4f46e5,#7c3aed)',
-          borderRadius: 20, padding: '1.25rem 1.4rem',
-          marginBottom: '1.25rem',
-          boxShadow: '0 8px 28px rgba(79,70,229,0.3)',
+          borderRadius: 16, padding: '1rem 1.25rem',
+          marginBottom: '1rem',
+          boxShadow: '0 4px 15px rgba(79,70,229,0.2)',
           position: 'relative', overflow: 'hidden',
           animation: 'slideUp 0.4s ease-out both',
         }}>
@@ -216,14 +217,11 @@ const DashboardPage = () => {
 
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <HiSparkles style={{ color: '#fde68a', fontSize: 16 }} />
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', fontFamily: "'Hind Siliguri', sans-serif" }}>{greeting}!</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <HiSparkles style={{ color: '#fde68a', fontSize: 18 }} />
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif" }}>{greeting}!</span>
               </div>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 4 }}>
-                ড্যাশবোর্ড ওভারভিউ
-              </h1>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', fontFamily: "'Hind Siliguri', sans-serif" }}>{today}</p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', fontFamily: "'Hind Siliguri', sans-serif" }}>{today}</p>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {[

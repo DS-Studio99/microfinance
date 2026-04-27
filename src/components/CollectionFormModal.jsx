@@ -10,7 +10,8 @@ const CollectionFormModal = ({ isOpen, onClose, onSubmit, voGroups }) => {
     current_savings: '',
     prev_installment: '',
     current_installment: '',
-    bkash_number: ''
+    bkash_number: '',
+    khata_written: 'না'
   })
   
   const [members, setMembers] = useState([])
@@ -27,7 +28,8 @@ const CollectionFormModal = ({ isOpen, onClose, onSubmit, voGroups }) => {
         current_savings: '',
         prev_installment: '',
         current_installment: '',
-        bkash_number: ''
+        bkash_number: '',
+        khata_written: 'না'
       })
       setMembers([])
     }
@@ -76,6 +78,7 @@ const CollectionFormModal = ({ isOpen, onClose, onSubmit, voGroups }) => {
       prev_installment: formData.prev_installment ? parseFloat(formData.prev_installment) : 0,
       current_installment: formData.current_installment ? parseFloat(formData.current_installment) : 0,
       bkash_number: formData.bkash_number || null,
+      khata_written: formData.khata_written === 'হ্যা',
     }
     const { error } = await onSubmit(payload)
     if (!error) onClose()
@@ -162,6 +165,25 @@ const CollectionFormModal = ({ isOpen, onClose, onSubmit, voGroups }) => {
             <div>
               <label className="field-label">বিকাশ / অন্যান্য মোবাইল নম্বর (যদি থাকে)</label>
               <input type="text" name="bkash_number" value={formData.bkash_number} onChange={handleChange} className="field-input" placeholder="যেমন: ০১৭..." />
+            </div>
+
+            <div>
+              <label className="field-label">খাতা লেখা হয়েছে? *</label>
+              <select
+                name="khata_written"
+                value={formData.khata_written}
+                onChange={handleChange}
+                className="field-input"
+                required
+                style={{
+                  color: formData.khata_written === 'হ্যা' ? '#15803d' : '#b45309',
+                  fontWeight: 700,
+                  fontFamily: "'Hind Siliguri', sans-serif"
+                }}
+              >
+                <option value="না" style={{ color: '#b45309' }}>না — খাতা লেখা হয়নি</option>
+                <option value="হ্যা" style={{ color: '#15803d' }}>হ্যা — খাতা লেখা হয়েছে</option>
+              </select>
             </div>
 
           </form>

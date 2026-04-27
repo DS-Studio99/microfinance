@@ -140,9 +140,13 @@ const VODetailPage = () => {
               style={{ padding: '0.25rem 0.5rem', fontSize: 13, minHeight: 32, maxWidth: 140 }}
             />
             <button
-              onClick={() => {
-                if (!bulkNextDate) return alert('দয়া করে তারিখ নির্বাচন করুন')
-                setNextMonthDateForPaidMembers(bulkNextDate)
+              onClick={async () => {
+                if (!bulkNextDate) return alert('দয়া করে তারিখ নির্বাচন করুন')
+                const res = await setNextMonthDateForPaidMembers(bulkNextDate)
+                if (!res?.error && voInfo?.id) {
+                  const { supabase: sb } = await import('../lib/supabase')
+                  await sb.from('vo_groups').update({ next_kisti_date: bulkNextDate }).eq('id', voInfo.id)
+                }
               }}
               style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: 8, padding: '0 1rem', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Hind Siliguri', sans-serif" }}
             >

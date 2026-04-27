@@ -90,15 +90,47 @@ export const useCollections = () => {
     }
   }
 
+  const updateKhataStatus = async (id, written) => {
+    try {
+      const { error } = await supabase
+        .from('collections')
+        .update({ khata_written: written })
+        .eq('id', id)
+
+      if (error) throw error
+      toast.success(written ? 'খাতা লেখা হয়েছে হিসেবে চিহ্নিত' : 'খাতা লেখা হয়নি হিসেবে চিহ্নিত')
+      fetchCollections()
+      return { error: null }
+    } catch (err) {
+      toast.error('খাতা অবস্থা আপডেট ব্যর্থ')
+      return { error: err }
+    }
+  }
+
+  // Derive unwritten khata collections (paid but khata not written)
+  const unwrittenKhata = collections.filter(c => c.khata_written === false || c.khata_written === null)
+
+  // Group unwritten by VO
+  const unwrittenKhataByVO = unwrittenKhata.reduce((acc, c) => {
+    const vo = c.members?.vo_number || c.vo_number || '?'
+    if (!acc[vo]) acc[vo] = []
+    acc[vo].push(c)
+    return acc
+  }, {})
+
   return {
     collections,
     pendingCollections: collections.filter(c => c.status === 'pending'),
     completedCollections: collections.filter(c => c.status === 'completed'),
+    unwrittenKhata,
+    unwrittenKhataByVO,
+    unwrittenKhataCount: unwrittenKhata.length,
     loading,
     error,
     fetchCollections,
     addCollection,
     markAsCompleted,
-    deleteCollection
+    deleteCollection,
+    updateKhataStatus
   }
 }
