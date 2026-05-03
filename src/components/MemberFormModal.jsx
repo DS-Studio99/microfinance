@@ -18,6 +18,7 @@ const defaultForm = {
   extra_amount: '',
   extra_amount_date: '',
   extra_amount_note: '',
+  is_late_payer: false,
 }
 
 // ── Sub-components ─────────────────────────────────────
@@ -96,6 +97,7 @@ const MemberFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups, defaul
         extra_amount: editData.extra_amount || '',
         extra_amount_date: editData.extra_amount_date || '',
         extra_amount_note: editData.extra_amount_note || '',
+        is_late_payer: editData.is_late_payer || false,
       })
     } else {
       setForm({ ...defaultForm, vo_number: defaultVONumber || '' })
@@ -328,6 +330,8 @@ const MemberFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups, defaul
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.5rem' }}>
             <ToggleRow id="field-is-due" label="বকেয়া আছে" icon={MdWarning} color="red"
               checked={form.is_due} onChange={e => setForm(p => ({ ...p, is_due: e.target.checked }))} />
+            <ToggleRow id="field-is-late-payer" label="নিয়মিত লেটকারী" icon={MdSchedule} color="red"
+              checked={form.is_late_payer} onChange={e => setForm(p => ({ ...p, is_late_payer: e.target.checked }))} />
             <ToggleRow id="field-is-called" label="কল করা হয়েছে" icon={MdPhone} color="green"
               checked={form.is_called} onChange={e => setForm(p => ({ ...p, is_called: e.target.checked }))} />
           </div>

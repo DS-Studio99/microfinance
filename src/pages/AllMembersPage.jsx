@@ -218,17 +218,19 @@ const AllMembersPage = () => {
                 onToggleDue={(id, val) => quickUpdateField(id, 'is_due', val)}
                 onToggleCalled={(id, val) => quickUpdateField(id, 'is_called', val)}
                 onToggleConfirmed={(id, val) => quickUpdateField(id, 'is_confirmed', val)}
+                onToggleLatePayer={(id, val) => quickUpdateField(id, 'is_late_payer', val)}
                 onMarkPaid={markAsPaid}
               />
             ))}
           </div>
         )}
 
-        {/* Modals */}
-        <MemberFormModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={addMember} voGroups={voGroups} />
-        <MemberFormModal isOpen={!!editMember} onClose={() => setEditMember(null)} onSubmit={handleEditSubmit} editData={editMember} voGroups={voGroups} />
-        <DeleteConfirmModal isOpen={!!deleteMemberData} onClose={() => setDeleteMemberData(null)} onConfirm={handleDeleteConfirm} memberName={deleteMemberData?.full_name} loading={deleteLoading} />
       </div>
+
+      {/* Modals */}
+      <MemberFormModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={addMember} voGroups={voGroups} />
+      <MemberFormModal isOpen={!!editMember} onClose={() => setEditMember(null)} onSubmit={handleEditSubmit} editData={editMember} voGroups={voGroups} />
+      <DeleteConfirmModal isOpen={!!deleteMemberData} onClose={() => setDeleteMemberData(null)} onConfirm={handleDeleteConfirm} memberName={deleteMemberData?.full_name} loading={deleteLoading} />
     </>
   )
 }

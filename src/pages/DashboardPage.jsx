@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import {
   MdPeople, MdGroups, MdToday, MdWarning, MdEvent,
   MdArrowForward, MdRefresh, MdDashboard, MdPendingActions,
-  MdCheckCircle, MdAccessTime, MdAttachMoney, MdAddCard, MdBook, MdEditNote,
+  MdCheckCircle, MdAccessTime, MdAttachMoney, MdAddCard, MdBook, MdEditNote, MdSchedule, MdEventAvailable,
 } from 'react-icons/md'
 import { RiShieldCheckLine } from 'react-icons/ri'
 import { HiSparkles } from 'react-icons/hi2'
@@ -163,16 +163,18 @@ const DashboardPage = () => {
     { title: 'মোট ভিও সংখ্যা', value: stats.totalVOs, icon: MdGroups, g1: '#059669', g2: '#047857', glow: '#059669', badge: 'গ্রুপ', onClick: () => navigate('/vo-list'), delay: 0.05 },
     { title: 'আজকের কিস্তি', value: stats.todayPayments, subInfo: `(নিশ্চিত: ${stats.todayConfirmed})`, icon: MdToday, g1: '#d97706', g2: '#b45309', glow: '#d97706', badge: 'আজ', onClick: () => navigate('/today-kisti'), delay: 0.1 },
     { title: 'আগামীকালের কিস্তি', value: stats.tomorrowPayments, subInfo: `(নিশ্চিত: ${stats.tomorrowConfirmed})`, icon: MdEvent, g1: '#84cc16', g2: '#4d7c0f', glow: '#84cc16', badge: 'আগামীকাল', onClick: () => navigate('/tomorrow-kisti'), delay: 0.15 },
+    { title: 'আগামী ৭ দিনের কিস্তি', value: stats.nextWeekPayments, subInfo: `(নিশ্চিত: ${stats.nextWeekConfirmed})`, icon: MdEventAvailable, g1: '#14b8a6', g2: '#0f766e', glow: '#14b8a6', badge: '৭ দিন পর', onClick: () => navigate('/next-week-kisti'), delay: 0.18 },
     { title: 'মোট বকেয়া সদস্য', value: stats.dueMembers, icon: MdWarning, g1: '#dc2626', g2: '#b91c1c', glow: '#dc2626', badge: 'বকেয়া', onClick: () => navigate('/due-report'), delay: 0.2 },
     { title: 'পেন্ডিং কালেকশন', value: stats.pendingCollections, icon: MdPendingActions, g1: '#8b5cf6', g2: '#6d28d9', glow: '#8b5cf6', badge: 'পোস্টিং বাকি', onClick: () => navigate('/collections'), delay: 0.25 },
   ]
 
+  const latePayersCard = { title: 'নিয়মিত লেটকারী', value: stats.latePayers, icon: MdSchedule, g1: '#b91c1c', g2: '#7f1d1d', glow: '#b91c1c', badge: 'লেটকারী', onClick: () => navigate('/late-payers'), delay: 0.28 }
   const moneyCard = { title: 'টোটাল বাকি পাওনা', value: stats.totalDueAmount, icon: MdAttachMoney, g1: '#be123c', g2: '#9f1239', glow: '#be123c', badge: 'পাওনা', onClick: () => navigate('/total-due-amount'), delay: 0.3 }
   const actionCards = [
     { title: 'নতুন লোন আবেদন', value: stats.totalLoanApplications, icon: MdAddCard, g1: '#0284c7', g2: '#0369a1', glow: '#0284c7', badge: 'লোন', onClick: () => navigate('/new-loan'), delay: 0.35 },
-    { title: 'বই সংগ্রহ', value: stats.totalBooks, icon: MdBook, g1: '#0891b2', g2: '#0e7490', glow: '#0891b2', badge: 'বই', onClick: () => navigate('/book-collection'), delay: 0.4 },
+    { title: 'বই সংগ্রহ', value: stats.runningBooks, icon: MdBook, g1: '#0891b2', g2: '#0e7490', glow: '#0891b2', badge: '\u09b0\u09be\u09a8\u09bf\u0982 \u09b8\u09a6\u09b8\u09cd\u09af', onClick: () => navigate('/book-collection'), delay: 0.4 },
     { title: 'জরুরী নোট', value: stats.totalNotes, icon: MdEditNote, g1: '#f59e0b', g2: '#d97706', glow: '#f59e0b', badge: 'নোট', onClick: () => navigate('/notes'), delay: 0.45 },
-    { title: 'খাতা লেখা হয়নি', value: stats.unwrittenKhata, icon: MdBook, g1: '#ea580c', g2: '#c2410c', glow: '#ea580c', badge: 'খাতা বাকি', onClick: () => navigate('/unwritten-khata'), delay: 0.5 },
+    { title: '\u09ac\u0987 \u09b2\u09c7\u0996\u09be \u09b9\u09af\u09bc\u09a8\u09bf', value: stats.unwrittenKhata, icon: MdBook, g1: '#ea580c', g2: '#c2410c', glow: '#ea580c', badge: '\u09ac\u0987 \u09ac\u09be\u0995\u09bf', onClick: () => navigate('/unwritten-khata'), delay: 0.5 },
   ]
 
   return (
@@ -272,6 +274,7 @@ const DashboardPage = () => {
           </p>
         </div>
         <div className="db-action-grid">
+          <StatCard {...latePayersCard} loading={loading} />
           <MoneyCard {...moneyCard} loading={loading} />
           {actionCards.map(c => <StatCard key={c.title} {...c} loading={loading} />)}
         </div>
@@ -372,3 +375,4 @@ const DashboardPage = () => {
 }
 
 export default DashboardPage
+

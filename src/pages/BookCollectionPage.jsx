@@ -16,8 +16,9 @@ const BookCollectionPage = () => {
   const [loading, setLoading] = useState(true)
   const [selectedVO, setSelectedVO] = useState('all')
   const [activeTab, setActiveTab] = useState('with-me') // 'with-me' | 'returned'
+  const [selectedStatus, setSelectedStatus] = useState('running') // 'running' | 'cancelled' | 'all'
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newBook, setNewBook] = useState({ member_name: '', vo_number: '', membership_status: 'running' })
+  const [newBook, setNewBook] = useState({ member_name: '', vo_number: '', membership_status: 'running', note: '' })
   const [addingBook, setAddingBook] = useState(false)
 
   const fetchData = useCallback(async () => {
@@ -56,11 +57,12 @@ const BookCollectionPage = () => {
         member_name: newBook.member_name.trim(),
         vo_number: parseInt(newBook.vo_number),
         membership_status: newBook.membership_status,
+        note: newBook.note,
         return_status: 'with-me',
       }])
       if (error) throw error
       toast.success('বই সফলভাবে যোগ করা হয়েছে!')
-      setNewBook({ member_name: '', vo_number: '', membership_status: 'running' })
+      setNewBook({ member_name: '', vo_number: '', membership_status: 'running', note: '' })
       setShowAddModal(false)
       fetchData()
     } catch (err) {
@@ -114,14 +116,27 @@ const BookCollectionPage = () => {
     }
   }
 
-  const filtered = books.filter(b => {
+  const handleUpdateNote = async (bookId, note) => {
+    try {
+      const { error } = await supabase.from('book_collections').update({ note }).eq('id', bookId)
+      if (error) throw error
+      setBooks(prev => prev.map(b => b.id === bookId ? { ...b, note } : b))
+      toast.success('নোট সেভ হয়েছে')
+    } catch (err) {
+      toast.error('নোট সেভ করতে ব্যর্থ')
+    }
+  }
+
+  const baseFiltered = books.filter(b => selectedStatus === 'all' || b.membership_status === selectedStatus)
+
+  const filtered = baseFiltered.filter(b => {
     const voMatch = selectedVO === 'all' || String(b.vo_number) === selectedVO
     const tabMatch = b.return_status === activeTab
     return voMatch && tabMatch
   })
 
-  const withMeCount = books.filter(b => b.return_status === 'with-me').length
-  const returnedCount = books.filter(b => b.return_status === 'returned').length
+  const withMeCount = baseFiltered.filter(b => b.return_status === 'with-me').length
+  const returnedCount = baseFiltered.filter(b => b.return_status === 'returned').length
 
   // Group by VO
   const grouped = filtered.reduce((acc, b) => {
@@ -212,13 +227,33 @@ const BookCollectionPage = () => {
         </div>
 
         {/* Tab + VO filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: '0.75rem', animation: 'slideUp 0.4s ease-out 0.15s both', flexWrap: 'wrap' }}>
-          <button className={`tab-pill ${activeTab === 'with-me' ? 'active' : ''}`} onClick={() => setActiveTab('with-me')}>
-            📚 আমার কাছে আছে ({withMeCount})
-          </button>
-          <button className={`tab-pill ${activeTab === 'returned' ? 'active' : ''}`} onClick={() => setActiveTab('returned')}>
-            ✅ ফেরত দিয়েছি ({returnedCount})
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '0.75rem', animation: 'slideUp 0.4s ease-out 0.15s both' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className={`tab-pill ${activeTab === 'with-me' ? 'active' : ''}`} onClick={() => setActiveTab('with-me')}>
+              📚 আমার কাছে আছে ({withMeCount})
+            </button>
+            <button className={`tab-pill ${activeTab === 'returned' ? 'active' : ''}`} onClick={() => setActiveTab('returned')}>
+              ✅ ফেরত দিয়েছি ({returnedCount})
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', padding: '4px', borderRadius: '20px' }}>
+            <button 
+              onClick={() => setSelectedStatus('running')}
+              style={{ padding: '6px 14px', borderRadius: '16px', border: 'none', fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer', background: selectedStatus === 'running' ? '#fff' : 'transparent', color: selectedStatus === 'running' ? '#16a34a' : '#64748b', boxShadow: selectedStatus === 'running' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none', transition: 'all 0.2s' }}>
+              রানিং
+            </button>
+            <button 
+              onClick={() => setSelectedStatus('cancelled')}
+              style={{ padding: '6px 14px', borderRadius: '16px', border: 'none', fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer', background: selectedStatus === 'cancelled' ? '#fff' : 'transparent', color: selectedStatus === 'cancelled' ? '#dc2626' : '#64748b', boxShadow: selectedStatus === 'cancelled' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none', transition: 'all 0.2s' }}>
+              বাতিল
+            </button>
+            <button 
+              onClick={() => setSelectedStatus('all')}
+              style={{ padding: '6px 14px', borderRadius: '16px', border: 'none', fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer', background: selectedStatus === 'all' ? '#fff' : 'transparent', color: selectedStatus === 'all' ? '#4f46e5' : '#64748b', boxShadow: selectedStatus === 'all' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none', transition: 'all 0.2s' }}>
+              সব
+            </button>
+          </div>
         </div>
 
         {/* VO filter */}
@@ -291,6 +326,13 @@ const BookCollectionPage = () => {
                             <option value="running">রানিং</option>
                             <option value="cancelled">বাতিল</option>
                           </select>
+                          <input
+                            type="text"
+                            placeholder="কারণ/নোট..."
+                            defaultValue={book.note || ''}
+                            onBlur={(e) => { if(e.target.value !== (book.note || '')) handleUpdateNote(book.id, e.target.value) }}
+                            style={{ flex: 1, minWidth: 60, fontSize: 11, padding: '2px 6px', borderRadius: 4, border: '1px dashed #cbd5e1', background: 'transparent', color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", outline: 'none' }}
+                          />
                           {book.returned_at && (
                             <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif" }}>
                               {new Date(book.returned_at).toLocaleDateString('bn-BD', { month: 'short', day: 'numeric' })}
@@ -370,6 +412,19 @@ const BookCollectionPage = () => {
                   ))
                 }
               </select>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', fontFamily: "'Hind Siliguri', sans-serif", display: 'block', marginBottom: 6 }}>
+                নোট / কারণ (ঐচ্ছিক)
+              </label>
+              <input
+                type="text"
+                style={fieldStyle}
+                placeholder="কেন সংগ্রহ করা হলো?"
+                value={newBook.note}
+                onChange={e => setNewBook(b => ({ ...b, note: e.target.value }))}
+              />
             </div>
 
             <div style={{ marginBottom: 20 }}>

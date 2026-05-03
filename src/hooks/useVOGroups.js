@@ -109,15 +109,18 @@ export const useDashboardStats = () => {
     totalVOs: 0,
     todayPayments: 0,
     tomorrowPayments: 0,
+    nextWeekPayments: 0,
     todayConfirmed: 0,
     tomorrowConfirmed: 0,
+    nextWeekConfirmed: 0,
     dueMembers: 0,
     pendingCollections: 0,
     totalDueAmount: 0,
     totalLoanApplications: 0,
     totalBooks: 0,
     totalNotes: 0,
-    unwrittenKhata: 0
+    unwrittenKhata: 0,
+    latePayers: 0
   })
   const [loading, setLoading] = useState(true)
 
@@ -131,10 +134,15 @@ export const useDashboardStats = () => {
       tomorrowObj.setDate(tomorrowObj.getDate() + 1)
       const tomorrow = tomorrowObj.toISOString().split('T')[0]
 
-      const [membersRes, voRes, dueRes] = await Promise.all([
+      const nextWeekObj = new Date(todayObj)
+      nextWeekObj.setDate(nextWeekObj.getDate() + 7)
+      const nextWeek = nextWeekObj.toISOString().split('T')[0]
+
+      const [membersRes, voRes, dueRes, lateRes] = await Promise.all([
         supabase.from('members').select('id', { count: 'exact', head: true }),
         supabase.from('vo_groups').select('id', { count: 'exact', head: true }),
         supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_due', true),
+        supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_late_payer', true),
       ])
 
       // for today and tomorrow payments, we fetch since we need custom logic
@@ -151,11 +159,17 @@ export const useDashboardStats = () => {
         (m.loan_payment_date && m.loan_payment_date === tomorrow) ||
         (m.expected_payment_date && m.expected_payment_date === tomorrow)
       )
+      const nextWeekList = (kistiData || []).filter(m =>
+        (m.loan_payment_date && m.loan_payment_date === nextWeek) ||
+        (m.expected_payment_date && m.expected_payment_date === nextWeek)
+      )
 
       const todayCount = todayList.length
       const tomorrowCount = tomorrowList.length
+      const nextWeekCount = nextWeekList.length
       const todayConfirmedCount = todayList.filter(m => m.is_confirmed).length
       const tomorrowConfirmedCount = tomorrowList.filter(m => m.is_confirmed).length
+      const nextWeekConfirmedCount = nextWeekList.filter(m => m.is_confirmed).length
 
       // Also fetch pending collections (gracefully handle if table missing)
       let pendingCount = 0
@@ -189,13 +203,15 @@ export const useDashboardStats = () => {
         totalLoanApplications = count || 0
       } catch (e) { console.warn('loan_applications table not yet available') }
 
-      // Fetch total books with-me
-      let totalBooks = 0
+      // Fetch running books with-me
+      let runningBooks = 0
       try {
         const { count } = await supabase
           .from('book_collections')
           .select('*', { count: 'exact', head: true })
-        totalBooks = count || 0
+          .eq('return_status', 'with-me')
+          .eq('membership_status', 'running')
+        runningBooks = count || 0
       } catch (e) { console.warn('book_collections table not yet available') }
 
       // Fetch total notes
@@ -222,15 +238,18 @@ export const useDashboardStats = () => {
         totalVOs: voRes.count || 0,
         todayPayments: todayCount,
         tomorrowPayments: tomorrowCount,
+        nextWeekPayments: nextWeekCount,
         todayConfirmed: todayConfirmedCount,
         tomorrowConfirmed: tomorrowConfirmedCount,
+        nextWeekConfirmed: nextWeekConfirmedCount,
         dueMembers: dueRes.count || 0,
         pendingCollections: pendingCount,
         totalDueAmount,
         totalLoanApplications,
-        totalBooks,
+        runningBooks,
         totalNotes,
-        unwrittenKhata
+        unwrittenKhata,
+        latePayers: lateRes.count || 0
       })
     } catch (err) {
       console.error('Stats fetch error:', err)

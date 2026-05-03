@@ -168,7 +168,7 @@ const CollectionFormModal = ({ isOpen, onClose, onSubmit, voGroups }) => {
             </div>
 
             <div>
-              <label className="field-label">খাতা লেখা হয়েছে? *</label>
+              <label className="field-label">বই লেখা হয়েছে? *</label>
               <select
                 name="khata_written"
                 value={formData.khata_written}
@@ -181,8 +181,8 @@ const CollectionFormModal = ({ isOpen, onClose, onSubmit, voGroups }) => {
                   fontFamily: "'Hind Siliguri', sans-serif"
                 }}
               >
-                <option value="না" style={{ color: '#b45309' }}>না — খাতা লেখা হয়নি</option>
-                <option value="হ্যা" style={{ color: '#15803d' }}>হ্যা — খাতা লেখা হয়েছে</option>
+                <option value="না" style={{ color: '#b45309' }}>না — বই লেখা হয়নি</option>
+                <option value="হ্যা" style={{ color: '#15803d' }}>হ্যা — বই লেখা হয়েছে</option>
               </select>
             </div>
 

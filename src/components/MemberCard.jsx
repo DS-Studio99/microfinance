@@ -237,7 +237,7 @@ const InfoRow = ({ icon: Icon, iconColor = '#94a3b8', children, highlight }) => 
 // ─────────────────────────────────────────
 // Main Card
 // ─────────────────────────────────────────
-const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onMarkPaid, onToggleConfirmed }) => {
+const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onMarkPaid, onToggleConfirmed, onToggleLatePayer }) => {
   const { allowEdit, allowDelete } = useSettingsStore()
   const today = new Date().toISOString().split('T')[0]
   const isToday = member.loan_payment_date === today
@@ -398,9 +398,21 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
             <InfoRow icon={MdPhone}><span style={{ fontSize: 12, color: '#94a3b8' }}>ফোন নম্বর নেই</span></InfoRow>
           )}
 
-          {/* Loan amount */}
+          {/* Loan amount & Installment */}
           <InfoRow icon={MdAttachMoney} iconColor="#059669">
-            <span style={{ fontSize: 12, color: '#334155', fontFamily: "'Hind Siliguri', sans-serif" }}>ঋণ: {formatMoney(member.loan_amount)}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: '#334155', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 600 }}>
+                মোট ঋণ: {formatMoney(member.loan_amount)}
+              </span>
+              {member.loan_amount > 0 && (
+                <>
+                  <span style={{ color: '#cbd5e1', fontSize: 10 }}>•</span>
+                  <span style={{ fontSize: 12, color: '#059669', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 700, background: '#dcfce7', padding: '1px 6px', borderRadius: 6 }}>
+                    মাসিক কিস্তি: {formatMoney(member.loan_amount * 0.1)}
+                  </span>
+                </>
+              )}
+            </div>
           </InfoRow>
 
           {/* Extra amount — yellow highlighted */}
@@ -484,6 +496,17 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
             icon={member.is_called ? MdPhone : MdPhoneDisabled}
             confirmMsg={member.is_called ? 'কলের চিহ্ন সরাবেন?' : 'কল সম্পন্ন হিসেবে চিহ্নিত করবেন?'}
           />
+          {onToggleLatePayer && (
+            <ToggleWithConfirm
+              id={`toggle-late-${member.id}`}
+              on={member.is_late_payer}
+              onColor="red"
+              onClick={() => onToggleLatePayer(member.id, !member.is_late_payer)}
+              label={member.is_late_payer ? 'লেটকারী' : 'নিয়মিত'}
+              icon={MdSchedule}
+              confirmMsg={member.is_late_payer ? 'লেটকারীর তালিকা থেকে সরাবেন?' : 'নিয়মিত লেটকারী হিসেবে চিহ্নিত করবেন?'}
+            />
+          )}
           <ToggleWithConfirm
             id={`toggle-confirmed-${member.id}`}
             on={member.is_confirmed}

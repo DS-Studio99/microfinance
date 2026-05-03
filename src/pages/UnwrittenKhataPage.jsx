@@ -22,10 +22,10 @@ const UnwrittenKhataPage = () => {
         </button>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
-            খাতা লেখা হয়নি এমন সদস্য
+            বই লেখা হয়নি এমন সদস্য
           </h1>
           <p style={{ fontSize: 13, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 2 }}>
-            টাকা দিয়েছেন কিন্তু খাতায় এন্ট্রি হয়নি
+            টাকা দিয়েছেন কিন্তু বইয়ে এন্ট্রি হয়নি
           </p>
         </div>
         {/* Summary badge */}
@@ -53,10 +53,10 @@ const UnwrittenKhataPage = () => {
         }}>
           <MdCheckCircle style={{ fontSize: 60, color: '#22c55e', margin: '0 auto 1rem', display: 'block' }} />
           <h3 style={{ fontSize: 18, color: '#14532d', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 800 }}>
-            সব খাতা আপডেট!
+            সব বই আপডেট!
           </h3>
           <p style={{ fontSize: 14, color: '#16a34a', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 6 }}>
-            কোনো বাকি এন্ট্রি নেই। সকল সদস্যের খাতা লেখা হয়েছে।
+            কোনো বাকি এন্ট্রি নেই। সকল সদস্যের বই লেখা হয়েছে।
           </p>
         </div>
       ) : (
@@ -99,7 +99,7 @@ const UnwrittenKhataPage = () => {
                         ভিও - {String(vo).padStart(2, '0')}
                       </p>
                       <p style={{ fontSize: 12, color: '#b45309', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
-                        {members.length} জনের খাতা বাকি
+                        {members.length} জনের বই বাকি
                       </p>
                     </div>
                   </div>
@@ -172,7 +172,7 @@ const UnwrittenKhataPage = () => {
                               onMouseLeave={e => e.currentTarget.style.transform = ''}
                             >
                               <MdBookmarkAdd style={{ fontSize: 16 }} />
-                              খাতা লেখা হয়েছে
+                              বই লেখা হয়েছে
                             </button>
                           </div>
                         </div>

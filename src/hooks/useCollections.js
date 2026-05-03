@@ -98,11 +98,11 @@ export const useCollections = () => {
         .eq('id', id)
 
       if (error) throw error
-      toast.success(written ? 'খাতা লেখা হয়েছে হিসেবে চিহ্নিত' : 'খাতা লেখা হয়নি হিসেবে চিহ্নিত')
+      toast.success(written ? 'বই লেখা হয়েছে হিসেবে চিহ্নিত' : 'বই লেখা হয়নি হিসেবে চিহ্নিত')
       fetchCollections()
       return { error: null }
     } catch (err) {
-      toast.error('খাতা অবস্থা আপডেট ব্যর্থ')
+      toast.error('বই অবস্থা আপডেট ব্যর্থ')
       return { error: err }
     }
   }

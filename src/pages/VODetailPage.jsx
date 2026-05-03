@@ -104,7 +104,24 @@ const VODetailPage = () => {
               ভিও নং- {String(voNum).padStart(2, '0')}
               {voInfo?.vo_name && <span style={{ fontSize: 14, fontWeight: 500, color: '#64748b', marginLeft: 8 }}>({voInfo.vo_name})</span>}
             </h1>
-            <p style={{ fontSize: 12, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif" }}>ভিও বিস্তারিত তথ্য</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <p style={{ fontSize: 12, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>ভিও বিস্তারিত তথ্য</p>
+              {voInfo?.collection_day && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #fef9c3, #fef08a)',
+                  borderRadius: 10, padding: '2px 8px',
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  border: '1px solid #fde047',
+                  animation: 'pulseRing 2s infinite',
+                  boxShadow: '0 0 10px rgba(234,179,8,0.2)'
+                }}>
+                  <MdCalendarToday style={{ color: '#ca8a04', fontSize: 11 }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#a16207', letterSpacing: 0.3 }}>
+                    {voInfo.collection_day}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
           <button
             id="refresh-vo-btn"
@@ -181,6 +198,7 @@ const VODetailPage = () => {
                   onToggleDue={(id, v) => { quickUpdateField(id, 'is_due', v); fetchStats() }}
                   onToggleCalled={(id, v) => { quickUpdateField(id, 'is_called', v); fetchStats() }}
                   onToggleConfirmed={(id, v) => { quickUpdateField(id, 'is_confirmed', v); fetchStats() }}
+                  onToggleLatePayer={(id, v) => { quickUpdateField(id, 'is_late_payer', v); fetchStats() }}
                   onMarkPaid={(member) => { markAsPaid(member); fetchStats() }}
                 />
               ))}
@@ -279,6 +297,7 @@ const VODetailPage = () => {
                     onToggleDue={(id, v) => { quickUpdateField(id, 'is_due', v); fetchStats() }}
                     onToggleCalled={(id, v) => { quickUpdateField(id, 'is_called', v); fetchStats() }}
                     onToggleConfirmed={(id, v) => { quickUpdateField(id, 'is_confirmed', v); fetchStats() }}
+                    onToggleLatePayer={(id, v) => { quickUpdateField(id, 'is_late_payer', v); fetchStats() }}
                     onMarkPaid={(member) => { markAsPaid(member); fetchStats() }}
                   />
                 ))}
@@ -287,11 +306,12 @@ const VODetailPage = () => {
           </div>
         </div>
 
-        {/* Modals */}
-        <MemberFormModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={async d => { await addMember(d); fetchStats() }} voGroups={voGroups} defaultVONumber={voNum} />
-        <MemberFormModal isOpen={!!editMember} onClose={() => setEditMember(null)} onSubmit={handleEditSubmit} editData={editMember} voGroups={voGroups} />
-        <DeleteConfirmModal isOpen={!!deleteMemberData} onClose={() => setDeleteMemberData(null)} onConfirm={handleDeleteConfirm} memberName={deleteMemberData?.full_name} loading={deleteLoading} />
       </div>
+
+      {/* Modals */}
+      <MemberFormModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={async d => { await addMember(d); fetchStats() }} voGroups={voGroups} defaultVONumber={voNum} />
+      <MemberFormModal isOpen={!!editMember} onClose={() => setEditMember(null)} onSubmit={handleEditSubmit} editData={editMember} voGroups={voGroups} />
+      <DeleteConfirmModal isOpen={!!deleteMemberData} onClose={() => setDeleteMemberData(null)} onConfirm={handleDeleteConfirm} memberName={deleteMemberData?.full_name} loading={deleteLoading} />
     </>
   )
 }

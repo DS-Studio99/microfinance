@@ -85,7 +85,7 @@ const CollectionCard = ({ data, onComplete, onDelete, onToggleKhata, allowDelete
               display: 'flex', alignItems: 'center', gap: 3
             }}>
               <MdBook style={{ fontSize: 12 }} />
-              {khataWritten ? 'খাতা লেখা হয়েছে' : 'খাতা লেখা হয়নি'}
+              {khataWritten ? 'বই লেখা হয়েছে' : 'বই লেখা হয়নি'}
             </div>
           </div>
           <CollectionMenu onDelete={() => onDelete(data.id)} allowDelete={allowDelete} />
@@ -120,7 +120,7 @@ const CollectionCard = ({ data, onComplete, onDelete, onToggleKhata, allowDelete
         {/* Khata toggle button */}
         <button
           onClick={() => onToggleKhata(data.id, !khataWritten)}
-          title={khataWritten ? 'খাতা লেখা হয়নি হিসেবে চিহ্নিত করুন' : 'খাতা লেখা হয়েছে হিসেবে চিহ্নিত করুন'}
+          title={khataWritten ? 'বই লেখা হয়নি হিসেবে চিহ্নিত করুন' : 'বই লেখা হয়েছে হিসেবে চিহ্নিত করুন'}
           style={{
             padding: '0.6rem 0.85rem',
             background: khataWritten ? '#f0fdf4' : '#fffbeb',

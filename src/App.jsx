@@ -20,6 +20,8 @@ import NewLoanPage from './pages/NewLoanPage'
 import BookCollectionPage from './pages/BookCollectionPage'
 import NotesPage from './pages/NotesPage'
 import UnwrittenKhataPage from './pages/UnwrittenKhataPage'
+import LatePayersPage from './pages/LatePayersPage'
+import NextWeekKistiPage from './pages/NextWeekKistiPage'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -123,6 +125,7 @@ const App = () => {
             <Route path="due-report" element={<DueReportPage />} />
             <Route path="today-kisti" element={<TodayKistiPage />} />
             <Route path="tomorrow-kisti" element={<TomorrowKistiPage />} />
+            <Route path="next-week-kisti" element={<NextWeekKistiPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="total-due-amount" element={<TotalDueAmountPage />} />
@@ -130,6 +133,7 @@ const App = () => {
             <Route path="book-collection" element={<BookCollectionPage />} />
             <Route path="notes" element={<NotesPage />} />
             <Route path="unwritten-khata" element={<UnwrittenKhataPage />} />
+            <Route path="late-payers" element={<LatePayersPage />} />
           </Route>
 
           {/* Catch-all */}

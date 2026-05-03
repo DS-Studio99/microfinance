@@ -130,38 +130,54 @@ const VOCard = ({ vo, memberCount, onDelete, onEdit, onClick, idx, allowEdit, al
           <VOCardMenu onEdit={onEdit} onDelete={onDelete} allowEdit={allowEdit} allowDelete={allowDelete} />
         </div>
 
-        {/* Next kisti date highlight */}
-        {kistiInfo ? (
-          <div style={{
-            background: 'rgba(255,255,255,0.18)',
-            borderRadius: 10, padding: '5px 10px',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            marginBottom: '0.6rem',
-            border: '1px solid rgba(255,255,255,0.25)',
-            backdropFilter: 'blur(4px)'
-          }}>
-            <MdCalendarToday style={{ color: '#fde68a', fontSize: 13 }} />
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#fde68a', letterSpacing: 0.3 }}>
-              {kistiInfo.date}
-            </span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontFamily: "'Hind Siliguri', sans-serif" }}>
-              ({kistiInfo.day})
-            </span>
-          </div>
-        ) : (
-          <div style={{
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: 10, padding: '4px 10px',
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            marginBottom: '0.6rem',
-            border: '1px dashed rgba(255,255,255,0.2)'
-          }}>
-            <MdCalendarToday style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }} />
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: "'Hind Siliguri', sans-serif" }}>
-              তারিখ সেট নেই
-            </span>
-          </div>
-        )}
+        {/* Next kisti date & Collection Day highlight */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: '0.6rem' }}>
+          {vo.collection_day && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(234,179,8,0.2), rgba(202,138,4,0.2))',
+              borderRadius: 10, padding: '5px 10px',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              border: '1px solid rgba(250,204,21,0.4)',
+              backdropFilter: 'blur(4px)',
+              animation: 'pulseRing 2s infinite',
+              boxShadow: '0 0 10px rgba(234,179,8,0.3)'
+            }}>
+              <MdCalendarToday style={{ color: '#fde047', fontSize: 13 }} />
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#fef08a', letterSpacing: 0.3, textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                {vo.collection_day}
+              </span>
+            </div>
+          )}
+          {kistiInfo ? (
+            <div style={{
+              background: 'rgba(255,255,255,0.18)',
+              borderRadius: 10, padding: '5px 10px',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              border: '1px solid rgba(255,255,255,0.25)',
+              backdropFilter: 'blur(4px)'
+            }}>
+              <MdCalendarToday style={{ color: '#fde68a', fontSize: 13 }} />
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#fde68a', letterSpacing: 0.3 }}>
+                {kistiInfo.date}
+              </span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ({kistiInfo.day})
+              </span>
+            </div>
+          ) : (
+            <div style={{
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: 10, padding: '4px 10px',
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              border: '1px dashed rgba(255,255,255,0.2)'
+            }}>
+              <MdCalendarToday style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: "'Hind Siliguri', sans-serif" }}>
+                তারিখ সেট নেই
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* footer row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -230,7 +246,7 @@ const VOListPage = () => {
   const [memberCounts, setMemberCounts] = useState({})
 
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newVO, setNewVO] = useState({ vo_number: '', vo_name: '' })
+  const [newVO, setNewVO] = useState({ vo_number: '', vo_name: '', collection_day_week: '১ম', collection_day_name: 'রবিবার' })
   const [addLoading, setAddLoading] = useState(false)
 
   const [showEditModal, setShowEditModal] = useState(false)
@@ -260,16 +276,18 @@ const VOListPage = () => {
     e.preventDefault()
     if (!newVO.vo_number) { toast.error('ভিও নম্বর প্রবেশ করুন'); return }
     setAddLoading(true)
-    const { error } = await addVOGroup({ vo_number: parseInt(newVO.vo_number), vo_name: newVO.vo_name || null })
+    const collection_day = `${newVO.collection_day_week} ${newVO.collection_day_name}`
+    const { error } = await addVOGroup({ vo_number: parseInt(newVO.vo_number), vo_name: newVO.vo_name || null, collection_day })
     setAddLoading(false)
-    if (!error) { setNewVO({ vo_number: '', vo_name: '' }); setShowAddModal(false) }
+    if (!error) { setNewVO({ vo_number: '', vo_name: '', collection_day_week: '১ম', collection_day_name: 'রবিবার' }); setShowAddModal(false) }
   }
 
   const handleUpdateVO = async (e) => {
     e.preventDefault()
     if (!editingVO.vo_number) { toast.error('ভিও নম্বর প্রবেশ করুন'); return }
     setEditLoading(true)
-    const { error } = await updateVOGroup(editingVO.id, { vo_number: parseInt(editingVO.vo_number), vo_name: editingVO.vo_name || null })
+    const collection_day = `${editingVO.collection_day_week} ${editingVO.collection_day_name}`
+    const { error } = await updateVOGroup(editingVO.id, { vo_number: parseInt(editingVO.vo_number), vo_name: editingVO.vo_name || null, collection_day })
     setEditLoading(false)
     if (!error) { setEditingVO(null); setShowEditModal(false) }
   }
@@ -350,7 +368,13 @@ const VOListPage = () => {
                 allowEdit={allowEdit}
                 allowDelete={allowDelete}
                 onClick={() => navigate(`/vo/${vo.vo_number}`)}
-                onEdit={() => { setEditingVO(vo); setShowEditModal(true) }}
+                onEdit={() => { 
+                  const parts = (vo.collection_day || '১ম রবিবার').split(' ')
+                  const week = parts[0] || '১ম'
+                  const day = parts[1] || 'রবিবার'
+                  setEditingVO({ ...vo, collection_day_week: week, collection_day_name: day }); 
+                  setShowEditModal(true) 
+                }}
                 onDelete={() => { if (window.confirm('এই ভিও মুছে ফেলতে চান?')) deleteVOGroup(vo.id) }}
               />
             ))}
@@ -390,6 +414,28 @@ const VOListPage = () => {
                   className="field-input"
                   style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                 />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label className="field-label">সপ্তাহ</label>
+                  <select
+                    value={newVO.collection_day_week}
+                    onChange={e => setNewVO(p => ({ ...p, collection_day_week: e.target.value }))}
+                    className="field-input"
+                  >
+                    {['১ম', '২য়', '৩য়', '৪র্থ', '৫ম'].map(w => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="field-label">বার</label>
+                  <select
+                    value={newVO.collection_day_name}
+                    onChange={e => setNewVO(p => ({ ...p, collection_day_name: e.target.value }))}
+                    className="field-input"
+                  >
+                    {['শনিবার', 'রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার'].map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
                 <button id="cancel-vo-btn" type="button" onClick={() => setShowAddModal(false)} className="btn-ghost" style={{ flex: 1, padding: '0.8rem' }}>বাতিল</button>
@@ -432,6 +478,28 @@ const VOListPage = () => {
                   className="field-input"
                   style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                 />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label className="field-label">সপ্তাহ</label>
+                  <select
+                    value={editingVO.collection_day_week}
+                    onChange={e => setEditingVO(p => ({ ...p, collection_day_week: e.target.value }))}
+                    className="field-input"
+                  >
+                    {['১ম', '২য়', '৩য়', '৪র্থ', '৫ম'].map(w => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="field-label">বার</label>
+                  <select
+                    value={editingVO.collection_day_name}
+                    onChange={e => setEditingVO(p => ({ ...p, collection_day_name: e.target.value }))}
+                    className="field-input"
+                  >
+                    {['শনিবার', 'রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার'].map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
                 <button id="cancel-edit-vo-btn" type="button" onClick={() => setShowEditModal(false)} className="btn-ghost" style={{ flex: 1, padding: '0.8rem' }}>বাতিল</button>
