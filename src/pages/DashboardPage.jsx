@@ -380,7 +380,7 @@ const DashboardPage = () => {
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
           <RiShieldCheckLine style={{ color: '#10b981', fontSize: 14 }} />
-          মাইক্রোফাইন্যান্স সদস্য ব্যবস্থাপনা সিস্টেম — সকল তথ্য সুরক্ষিত
+          SM Brac Panel সদস্য ব্যবস্থাপনা সিস্টেম — সকল তথ্য সুরক্ষিত
         </div>
       </div>
     </>

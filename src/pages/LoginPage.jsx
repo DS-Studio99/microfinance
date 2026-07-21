@@ -429,7 +429,7 @@ const LoginPage = () => {
             </svg>
           </div>
 
-          <h1 className="lp-brand-title">মাইক্রোফাইন্যান্স<br />সদস্য ব্যবস্থাপনা</h1>
+          <h1 className="lp-brand-title">SM Brac Panel<br />সদস্য ব্যবস্থাপনা</h1>
           <p className="lp-brand-sub">স্মার্ট ও নিরাপদ অ্যাডমিন প্যানেল — সদস্যদের সম্পূর্ণ তথ্য পরিচালনা করুন</p>
 
           <div className="lp-features">
@@ -447,7 +447,7 @@ const LoginPage = () => {
             ))}
           </div>
 
-          <div className="lp-bottom-badge">© ২০২৪ মাইক্রোফাইন্যান্স সিস্টেম</div>
+          <div className="lp-bottom-badge">© ২০২৪ SM Brac Panel</div>
         </div>
 
         {/* ══ RIGHT PANEL ══ */}

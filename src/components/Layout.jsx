@@ -45,7 +45,7 @@ const Layout = () => {
             }}>
               <MdGroups style={{ color: '#fff', fontSize: 18 }} />
             </div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif" }}>মাইক্রোফাইন্যান্স</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: "'Inter', 'Hind Siliguri', sans-serif", letterSpacing: '-0.01em' }}>SM Brac Panel</span>
           </div>
         </div>
 
