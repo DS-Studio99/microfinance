@@ -68,9 +68,10 @@ export const useMembers = (voNumber = null) => {
           .from('members')
           .select('id')
           .eq('member_number', memberData.member_number)
-          .single()
+          .eq('vo_number', memberData.vo_number)
+          .maybeSingle()
         if (existing) {
-          toast.error('এই সদস্য নাম্বারটি ইতিমধ্যে ব্যবহার করা হয়েছে')
+          toast.error('এই ভিও-তে সদস্য নাম্বারটি ইতিমধ্যে ব্যবহার করা হয়েছে')
           return { data: null, error: new Error('Duplicate member_number') }
         }
       }
@@ -98,10 +99,11 @@ export const useMembers = (voNumber = null) => {
           .from('members')
           .select('id')
           .eq('member_number', memberData.member_number)
+          .eq('vo_number', memberData.vo_number)
           .neq('id', id)
           .maybeSingle()
         if (existing) {
-          toast.error('এই সদস্য নাম্বারটি ইতিমধ্যে ব্যবহার করা হয়েছে')
+          toast.error('এই ভিও-তে সদস্য নাম্বারটি ইতিমধ্যে ব্যবহার করা হয়েছে')
           return { data: null, error: new Error('Duplicate member_number') }
         }
       }
