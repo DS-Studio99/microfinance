@@ -63,6 +63,18 @@ export const useMembers = (voNumber = null) => {
 
   const addMember = async (memberData) => {
     try {
+      if (memberData.member_number) {
+        const { data: existing } = await supabase
+          .from('members')
+          .select('id')
+          .eq('member_number', memberData.member_number)
+          .single()
+        if (existing) {
+          toast.error('এই সদস্য নাম্বারটি ইতিমধ্যে ব্যবহার করা হয়েছে')
+          return { data: null, error: new Error('Duplicate member_number') }
+        }
+      }
+
       const { data, error } = await supabase
         .from('members')
         .insert([memberData])
@@ -81,6 +93,19 @@ export const useMembers = (voNumber = null) => {
 
   const updateMember = async (id, memberData) => {
     try {
+      if (memberData.member_number) {
+        const { data: existing } = await supabase
+          .from('members')
+          .select('id')
+          .eq('member_number', memberData.member_number)
+          .neq('id', id)
+          .maybeSingle()
+        if (existing) {
+          toast.error('এই সদস্য নাম্বারটি ইতিমধ্যে ব্যবহার করা হয়েছে')
+          return { data: null, error: new Error('Duplicate member_number') }
+        }
+      }
+
       const { data, error } = await supabase
         .from('members')
         .update({ ...memberData, updated_at: new Date().toISOString() })
@@ -140,6 +165,7 @@ export const useMembers = (voNumber = null) => {
         expected_payment_date: null,
         is_due: false,
         is_called: false,
+        last_paid_date: new Date().toISOString().split('T')[0],
         updated_at: new Date().toISOString()
       }
 

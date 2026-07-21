@@ -270,13 +270,26 @@ const DashboardPage = () => {
         {/* ── New Feature Cards ── */}
         <div style={{ marginBottom: '0.6rem' }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
-            ✨ নতুন ফিচার
+            ✨ লোন ও অন্যান্য
           </p>
         </div>
         <div className="db-action-grid">
           <StatCard {...latePayersCard} loading={loading} />
           <MoneyCard {...moneyCard} loading={loading} />
           {actionCards.map(c => <StatCard key={c.title} {...c} loading={loading} />)}
+        </div>
+
+        {/* ── Disbursements (Loan & Savings) ── */}
+        <div style={{ marginBottom: '0.6rem', marginTop: '1rem' }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+            💸 লোন ও সঞ্চয় প্রদান
+          </p>
+        </div>
+        <div className="db-action-grid">
+          <MoneyCard title={`আজকের লোন (${stats.todayLoanCount || 0} জন)`} value={stats.todayLoanAmount || 0} icon={MdAttachMoney} g1='#0ea5e9' g2='#0284c7' glow='#0ea5e9' badge='আজ' loading={loading} delay={0.4} />
+          <MoneyCard title={`আজকের সঞ্চয়ফেরত (${stats.todaySavingsCount || 0} জন)`} value={stats.todaySavingsAmount || 0} icon={MdAttachMoney} g1='#10b981' g2='#059669' glow='#10b981' badge='আজ' loading={loading} delay={0.45} />
+          <MoneyCard title={`আগামীকালের লোন (${stats.tomorrowLoanCount || 0} জন)`} value={stats.tomorrowLoanAmount || 0} icon={MdAttachMoney} g1='#3b82f6' g2='#2563eb' glow='#3b82f6' badge='আগামীকাল' loading={loading} delay={0.5} />
+          <MoneyCard title={`আগামীকালের সঞ্চয়ফেরত (${stats.tomorrowSavingsCount || 0} জন)`} value={stats.tomorrowSavingsAmount || 0} icon={MdAttachMoney} g1='#84cc16' g2='#65a30d' glow='#84cc16' badge='আগামীকাল' loading={loading} delay={0.55} />
         </div>
 
         {/* ── Bottom grid ── */}

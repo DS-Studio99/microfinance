@@ -224,8 +224,10 @@ const LatePayersPage = () => {
 
   // Group by VO number
   const byVO = useMemo(() => {
+    const disabledNums = voGroups.filter(v => v.is_disabled).map(v => v.vo_number)
+    const activeMembers = lateMembers.filter(m => !disabledNums.includes(m.vo_number))
     const map = {}
-    lateMembers.forEach(m => {
+    activeMembers.forEach(m => {
       if (!map[m.vo_number]) map[m.vo_number] = []
       map[m.vo_number].push(m)
     })

@@ -92,14 +92,38 @@ export const useVOGroups = () => {
     }
   }
 
+  const toggleVODisabled = async (id, isDisabled) => {
+    try {
+      const { error } = await supabase
+        .from('vo_groups')
+        .update({ is_disabled: isDisabled })
+        .eq('id', id)
+
+      if (error) throw error
+      toast.success(isDisabled ? 'ভিও ডিসেবল করা হয়েছে' : 'ভিও এনাবল করা হয়েছে')
+      fetchVOGroups()
+      return { error: null }
+    } catch (err) {
+      toast.error('ভিও আপডেট করতে ব্যর্থ হয়েছে')
+      return { error: err }
+    }
+  }
+
+  // Active VOs (not disabled) - use this for filtering data everywhere
+  const activeVoGroups = voGroups.filter(vo => !vo.is_disabled)
+  const disabledVoNumbers = voGroups.filter(vo => vo.is_disabled).map(vo => vo.vo_number)
+
   return {
     voGroups,
+    activeVoGroups,
+    disabledVoNumbers,
     loading,
     error,
     fetchVOGroups,
     addVOGroup,
     updateVOGroup,
     deleteVOGroup,
+    toggleVODisabled,
   }
 }
 
@@ -138,18 +162,39 @@ export const useDashboardStats = () => {
       nextWeekObj.setDate(nextWeekObj.getDate() + 7)
       const nextWeek = nextWeekObj.toISOString().split('T')[0]
 
+      // First fetch disabled VO numbers
+      const { data: disabledVOs } = await supabase
+        .from('vo_groups')
+        .select('vo_number')
+        .eq('is_disabled', true)
+      const disabledVoNums = (disabledVOs || []).map(v => v.vo_number)
+
+      // Build member queries - if disabled VOs exist, filter them out
+      let membersQuery = supabase.from('members').select('id', { count: 'exact', head: true })
+      let voQuery = supabase.from('vo_groups').select('id', { count: 'exact', head: true }).neq('is_disabled', true)
+      let dueQuery = supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_due', true)
+      let lateQuery = supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_late_payer', true)
+
+      if (disabledVoNums.length > 0) {
+        const notIn = disabledVoNums
+        membersQuery = membersQuery.not('vo_number', 'in', `(${notIn.join(',')})`)
+        dueQuery = dueQuery.not('vo_number', 'in', `(${notIn.join(',')})`)
+        lateQuery = lateQuery.not('vo_number', 'in', `(${notIn.join(',')})`)
+      }
+
       const [membersRes, voRes, dueRes, lateRes] = await Promise.all([
-        supabase.from('members').select('id', { count: 'exact', head: true }),
-        supabase.from('vo_groups').select('id', { count: 'exact', head: true }),
-        supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_due', true),
-        supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_late_payer', true),
+        membersQuery, voQuery, dueQuery, lateQuery,
       ])
 
       // for today and tomorrow payments, we fetch since we need custom logic
-      const { data: kistiData } = await supabase
+      let kistiQuery = supabase
         .from('members')
         .select('loan_payment_date, expected_payment_date, is_confirmed')
         .is('loan_cleared_date', null)
+      if (disabledVoNums.length > 0) {
+        kistiQuery = kistiQuery.not('vo_number', 'in', `(${disabledVoNums.join(',')})`)
+      }
+      const { data: kistiData } = await kistiQuery
 
       const todayList = (kistiData || []).filter(m =>
         (m.loan_payment_date && m.loan_payment_date === today) ||
@@ -186,22 +231,16 @@ export const useDashboardStats = () => {
       // Fetch total due amount
       let totalDueAmount = 0
       try {
-        const { data: dueData } = await supabase
+        let dueAmtQuery = supabase
           .from('members')
           .select('extra_amount')
           .gt('extra_amount', 0)
+        if (disabledVoNums.length > 0) {
+          dueAmtQuery = dueAmtQuery.not('vo_number', 'in', `(${disabledVoNums.join(',')})`)
+        }
+        const { data: dueData } = await dueAmtQuery
         totalDueAmount = (dueData || []).reduce((sum, m) => sum + (m.extra_amount || 0), 0)
       } catch (e) { console.warn('due amount fetch failed') }
-
-      // Fetch pending loan applications count
-      let totalLoanApplications = 0
-      try {
-        const { count } = await supabase
-          .from('loan_applications')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending')
-        totalLoanApplications = count || 0
-      } catch (e) { console.warn('loan_applications table not yet available') }
 
       // Fetch running books with-me
       let runningBooks = 0
@@ -213,6 +252,45 @@ export const useDashboardStats = () => {
           .eq('membership_status', 'running')
         runningBooks = count || 0
       } catch (e) { console.warn('book_collections table not yet available') }
+
+      // Fetch pending loan applications count and calculate loan/savings stats
+      let totalLoanApplications = 0
+      let todayLoanCount = 0, todayLoanAmount = 0
+      let tomorrowLoanCount = 0, tomorrowLoanAmount = 0
+      let todaySavingsCount = 0, todaySavingsAmount = 0
+      let tomorrowSavingsCount = 0, tomorrowSavingsAmount = 0
+
+      try {
+        // Fetch all pending applications to count and check dates
+        const { data: loanApps, count } = await supabase
+          .from('loan_applications')
+          .select('*', { count: 'exact' })
+          .eq('status', 'pending')
+        
+        totalLoanApplications = count || 0
+
+        if (loanApps) {
+          loanApps.forEach(app => {
+            if (app.disbursement_date === today) {
+              if (app.application_type === 'savings') {
+                todaySavingsCount++
+                todaySavingsAmount += app.loan_amount || 0
+              } else {
+                todayLoanCount++
+                todayLoanAmount += app.loan_amount || 0
+              }
+            } else if (app.disbursement_date === tomorrow) {
+              if (app.application_type === 'savings') {
+                tomorrowSavingsCount++
+                tomorrowSavingsAmount += app.loan_amount || 0
+              } else {
+                tomorrowLoanCount++
+                tomorrowLoanAmount += app.loan_amount || 0
+              }
+            }
+          })
+        }
+      } catch (e) { console.warn('loan_applications table not yet available or failed to fetch') }
 
       // Fetch total notes
       let totalNotes = 0
@@ -246,6 +324,10 @@ export const useDashboardStats = () => {
         pendingCollections: pendingCount,
         totalDueAmount,
         totalLoanApplications,
+        todayLoanCount, todayLoanAmount,
+        tomorrowLoanCount, tomorrowLoanAmount,
+        todaySavingsCount, todaySavingsAmount,
+        tomorrowSavingsCount, tomorrowSavingsAmount,
         runningBooks,
         totalNotes,
         unwrittenKhata,

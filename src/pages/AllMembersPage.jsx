@@ -10,7 +10,7 @@ import { useState as useToggle } from 'react'
 
 const AllMembersPage = () => {
   const { members, loading, addMember, updateMember, deleteMember, quickUpdateField, markAsPaid, fetchMembers } = useMembers()
-  const { voGroups } = useVOGroups()
+  const { voGroups, disabledVoNumbers } = useVOGroups()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [filterVO, setFilterVO] = useState('')
@@ -25,6 +25,7 @@ const AllMembersPage = () => {
 
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
+      if (disabledVoNumbers.includes(m.vo_number)) return false
       const q = searchQuery.toLowerCase()
       const matchSearch = !searchQuery ||
         m.full_name?.toLowerCase().includes(q) ||
@@ -34,7 +35,7 @@ const AllMembersPage = () => {
       const matchCalled = !filterCalled || (filterCalled === 'called' ? m.is_called : !m.is_called)
       return matchSearch && matchVO && matchDue && matchCalled
     })
-  }, [members, searchQuery, filterVO, filterDue, filterCalled])
+  }, [members, searchQuery, filterVO, filterDue, filterCalled, disabledVoNumbers])
 
   const handleEditSubmit = async (data) => { await updateMember(editMember.id, data); setEditMember(null) }
   const handleDeleteConfirm = async () => {

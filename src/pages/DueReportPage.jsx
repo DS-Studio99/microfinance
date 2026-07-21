@@ -205,7 +205,7 @@ const VODueCard = ({ vo, members, idx, navigateToVO }) => {
 // ── Main Page ───────────────────────────────────────────
 const DueReportPage = () => {
   const navigate = useNavigate()
-  const { voGroups } = useVOGroups()
+  const { voGroups, disabledVoNumbers } = useVOGroups()
   const [dueMembers, setDueMembers] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -231,8 +231,9 @@ const DueReportPage = () => {
 
   // Group by VO number
   const byVO = useMemo(() => {
+    const activeMembers = dueMembers.filter(m => !disabledVoNumbers.includes(m.vo_number))
     const map = {}
-    dueMembers.forEach(m => {
+    activeMembers.forEach(m => {
       if (!map[m.vo_number]) map[m.vo_number] = []
       map[m.vo_number].push(m)
     })
@@ -244,7 +245,7 @@ const DueReportPage = () => {
         members,
         vo: voGroups.find(v => v.vo_number === parseInt(voNum)),
       }))
-  }, [dueMembers, voGroups])
+  }, [dueMembers, voGroups, disabledVoNumbers])
 
   // Overall stats
   const totalDays = useMemo(() => {

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVOGroups } from '../hooks/useVOGroups'
 import { supabase } from '../lib/supabase'
-import { MdAdd, MdGroups, MdPeople, MdArrowForward, MdClose, MdDelete, MdSearch, MdEdit, MdCalendarToday, MdMoreVert } from 'react-icons/md'
+import { MdAdd, MdGroups, MdPeople, MdArrowForward, MdClose, MdDelete, MdSearch, MdEdit, MdCalendarToday, MdMoreVert, MdToggleOn, MdToggleOff } from 'react-icons/md'
 import { useSettingsStore } from '../store/settingsStore'
 import { useEffect } from 'react'
 import toast from 'react-hot-toast'
@@ -30,7 +30,7 @@ function formatDateBangla(dateStr) {
 }
 
 /* ── 3-dot Menu for VO Card ── */
-const VOCardMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
+const VOCardMenu = ({ onEdit, onDelete, onToggleDisable, isDisabled, allowEdit, allowDelete }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef()
 
@@ -39,8 +39,6 @@ const VOCardMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
     document.addEventListener('mousedown', h)
     return () => document.removeEventListener('mousedown', h)
   }, [])
-
-  if (!allowEdit && !allowDelete) return null
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -63,23 +61,35 @@ const VOCardMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
           position: 'absolute', top: 32, right: 0, zIndex: 300,
           background: '#fff', borderRadius: 12,
           boxShadow: '0 8px 30px rgba(15,23,42,0.2)',
-          border: '1px solid #e8edf3', overflow: 'hidden', minWidth: 140,
+          border: '1px solid #e8edf3', overflow: 'hidden', minWidth: 150,
           animation: 'scaleUp 0.15s ease-out',
         }}>
+          {/* Toggle Enable/Disable */}
+          <button onClick={e => { e.stopPropagation(); setOpen(false); onToggleDisable() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: isDisabled ? '#059669' : '#d97706', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.background = isDisabled ? '#f0fdf4' : '#fffbeb'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+            {isDisabled ? <MdToggleOn style={{ fontSize: 18 }} /> : <MdToggleOff style={{ fontSize: 18 }} />}
+            {isDisabled ? 'এনাবল করুন' : 'ডিসেবল করুন'}
+          </button>
           {allowEdit && (
-            <button onClick={e => { e.stopPropagation(); setOpen(false); onEdit() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#4338ca', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#eef2ff'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-              <MdEdit style={{ fontSize: 16 }} />সম্পাদনা
-            </button>
+            <>
+              <div style={{ height: 1, background: '#f1f5f9' }} />
+              <button onClick={e => { e.stopPropagation(); setOpen(false); onEdit() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#4338ca', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#eef2ff'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                <MdEdit style={{ fontSize: 16 }} />সম্পাদনা
+              </button>
+            </>
           )}
-          {allowEdit && allowDelete && <div style={{ height: 1, background: '#f1f5f9' }} />}
           {allowDelete && (
-            <button onClick={e => { e.stopPropagation(); setOpen(false); onDelete() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#dc2626', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-              <MdDelete style={{ fontSize: 16 }} />মুছে ফেলুন
-            </button>
+            <>
+              <div style={{ height: 1, background: '#f1f5f9' }} />
+              <button onClick={e => { e.stopPropagation(); setOpen(false); onDelete() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#dc2626', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                <MdDelete style={{ fontSize: 16 }} />মুছে ফেলুন
+              </button>
+            </>
           )}
         </div>
       )}
@@ -87,23 +97,25 @@ const VOCardMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
   )
 }
 
-const VOCard = ({ vo, memberCount, onDelete, onEdit, onClick, idx, allowEdit, allowDelete }) => {
+const VOCard = ({ vo, memberCount, onDelete, onEdit, onToggleDisable, onClick, idx, allowEdit, allowDelete }) => {
   const [g1, g2] = gradients[idx % gradients.length]
   const kistiInfo = formatDateBangla(vo.next_kisti_date)
+  const isDisabled = vo.is_disabled === true
 
   return (
     <div
       onClick={onClick}
       style={{
-        background: `linear-gradient(135deg,${g1},${g2})`,
+        background: isDisabled ? 'linear-gradient(135deg, #94a3b8, #64748b)' : `linear-gradient(135deg,${g1},${g2})`,
         borderRadius: 20, overflow: 'hidden',
         cursor: 'pointer', position: 'relative',
-        boxShadow: `0 6px 24px ${g1}40`,
+        boxShadow: isDisabled ? '0 2px 8px rgba(0,0,0,0.1)' : `0 6px 24px ${g1}40`,
         transition: 'transform 0.22s, box-shadow 0.22s',
         animation: `slideUp 0.4s ease-out ${idx * 0.06}s both`,
+        opacity: isDisabled ? 0.6 : 1,
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 14px 40px ${g1}55`; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 6px 24px ${g1}40`; }}
+      onMouseEnter={e => { if (!isDisabled) { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 14px 40px ${g1}55`; } }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = isDisabled ? '0 2px 8px rgba(0,0,0,0.1)' : `0 6px 24px ${g1}40`; }}
     >
       {/* bg blobs */}
       <div style={{ position: 'absolute', top: -24, right: -24, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
@@ -119,6 +131,7 @@ const VOCard = ({ vo, memberCount, onDelete, onEdit, onClick, idx, allowEdit, al
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.1, margin: 0 }}>
                 ভিও - {String(vo.vo_number).padStart(2, '0')}
+                {isDisabled && <span style={{ fontSize: 10, fontWeight: 600, marginLeft: 6, background: 'rgba(0,0,0,0.25)', padding: '1px 6px', borderRadius: 6 }}>ডিসেবল</span>}
               </h2>
               {vo.vo_name && (
                 <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
@@ -127,7 +140,7 @@ const VOCard = ({ vo, memberCount, onDelete, onEdit, onClick, idx, allowEdit, al
               )}
             </div>
           </div>
-          <VOCardMenu onEdit={onEdit} onDelete={onDelete} allowEdit={allowEdit} allowDelete={allowDelete} />
+          <VOCardMenu onEdit={onEdit} onDelete={onDelete} onToggleDisable={onToggleDisable} isDisabled={isDisabled} allowEdit={allowEdit} allowDelete={allowDelete} />
         </div>
 
         {/* Next kisti date & Collection Day highlight */}
@@ -241,7 +254,7 @@ const ModalHeader = ({ icon, title, onClose }) => (
 
 const VOListPage = () => {
   const navigate = useNavigate()
-  const { voGroups, loading, addVOGroup, updateVOGroup, deleteVOGroup } = useVOGroups()
+  const { voGroups, loading, addVOGroup, updateVOGroup, deleteVOGroup, toggleVODisabled } = useVOGroups()
   const { allowEdit, allowDelete } = useSettingsStore()
   const [memberCounts, setMemberCounts] = useState({})
 
@@ -368,6 +381,7 @@ const VOListPage = () => {
                 allowEdit={allowEdit}
                 allowDelete={allowDelete}
                 onClick={() => navigate(`/vo/${vo.vo_number}`)}
+                onToggleDisable={() => toggleVODisabled(vo.id, !vo.is_disabled)}
                 onEdit={() => { 
                   const parts = (vo.collection_day || '১ম রবিবার').split(' ')
                   const week = parts[0] || '১ম'

@@ -13,8 +13,7 @@ import { useSettingsStore } from '../store/settingsStore'
 // Helpers
 // ─────────────────────────────────────────
 export const formatAddress = (m) => {
-  const parts = [m.village, m.post_office, m.upazila, m.district].filter(Boolean)
-  return parts.length > 0 ? parts.join(', ') : ''
+  return m.village || ''
 }
 
 export const formatMoney = (amount) => {
@@ -246,6 +245,7 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
   const hasExtraAmount = member.extra_amount && parseFloat(member.extra_amount) > 0
   const hasClearedDate = !!member.loan_cleared_date
   const hasExpectedDate = !!member.expected_payment_date
+  const isPaidToday = member.last_paid_date === today
   const phone = member.phone_number || ''
   const intl = intlPhone(phone)
 
@@ -254,11 +254,13 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
       background: '#fff', borderRadius: 18,
       border: hasClearedDate
         ? '1.5px solid #86efac'
-        : isToday
-          ? '1.5px solid #fbbf24'
-          : daysOverdue && member.is_due
-            ? '1.5px solid #fca5a5'
-            : '1px solid #e8edf3',
+        : isPaidToday
+          ? '1.5px solid #6ee7b7'
+          : isToday
+            ? '1.5px solid #fbbf24'
+            : daysOverdue && member.is_due
+              ? '1.5px solid #fca5a5'
+              : '1px solid #e8edf3',
       boxShadow: daysOverdue && member.is_due
         ? '0 4px 20px rgba(239,68,68,0.1)'
         : '0 2px 10px rgba(15,23,42,0.07)',
@@ -276,6 +278,12 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
             <MdEventAvailable style={{ fontSize: 13 }} />ঋণ পরিশোধ সম্পন্ন
           </span>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontFamily: "'Hind Siliguri', sans-serif" }}>{formatDate(member.loan_cleared_date)}</span>
+        </div>
+      ) : isPaidToday ? (
+        <div style={{ background: 'linear-gradient(90deg,#059669,#10b981)', padding: '5px 13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, fontFamily: "'Hind Siliguri', sans-serif" }}>
+            <MdCheckCircle style={{ fontSize: 12 }} />আজকে পরিশোধ হয়েছে
+          </span>
         </div>
       ) : isToday ? (
         <div style={{ background: 'linear-gradient(90deg,#f59e0b,#fb923c)', padding: '5px 13px' }}>
@@ -429,12 +437,14 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
                   </span>
                 )}
               </div>
-              {member.extra_amount_note && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, paddingLeft: 18 }}>
-                  <MdNotes style={{ fontSize: 11, color: '#a16207', flexShrink: 0, marginTop: 1 }} />
-                  <span style={{ fontSize: 11, color: '#78350f', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.4 }}>{member.extra_amount_note}</span>
-                </div>
-              )}
+            </div>
+          )}
+
+          {/* Member Note — Always visible if exists */}
+          {member.extra_amount_note && (
+            <div style={{ background: '#fef9c3', borderRadius: 8, padding: '5px 8px', border: '1px solid #fde68a', margin: '1px 0', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+              <MdNotes style={{ fontSize: 11, color: '#a16207', flexShrink: 0, marginTop: 1 }} />
+              <span style={{ fontSize: 11, color: '#78350f', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.4 }}>{member.extra_amount_note}</span>
             </div>
           )}
 

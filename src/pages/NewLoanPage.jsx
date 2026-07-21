@@ -57,9 +57,16 @@ const LoanCard = ({ loan, onEdit, onDelete, onComplete }) => {
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', cursor: 'pointer' }}
       >
         <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
-            {loan.member_name}
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>
+              {loan.member_name}
+            </h3>
+            {loan.application_type === 'savings' ? (
+              <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: 6, fontFamily: "'Hind Siliguri', sans-serif" }}>সঞ্চয় উত্তোলন</span>
+            ) : (
+              <span style={{ fontSize: 10, fontWeight: 700, background: '#e0e7ff', color: '#3730a3', padding: '2px 6px', borderRadius: 6, fontFamily: "'Hind Siliguri', sans-serif" }}>লোন</span>
+            )}
+          </div>
           <p style={{ fontSize: 12, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", marginTop: 2 }}>
             সদস্য নং: #{loan.member_number} &nbsp;•&nbsp; <strong style={{color: '#4f46e5'}}>ভিও - {String(loan.vo_number).padStart(2,'0')}</strong>
           </p>
@@ -89,18 +96,25 @@ const LoanCard = ({ loan, onEdit, onDelete, onComplete }) => {
 
       {expanded && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, animation: 'fadeIn 0.3s ease' }}>
-          <div style={{ gridColumn: '1 / -1' }}><DetailItem label="ঠিকানা" value={loan.full_address} icon={MdLocationOn} /></div>
-          <DetailItem label="পিতার নাম" value={loan.father_name} />
-          <DetailItem label="মাতার নাম" value={loan.mother_name} />
-          <DetailItem label="স্বামীর নাম" value={loan.husband_name} />
-          <DetailItem label="কার্ড টাইপ" value={loan.card_type} />
-          <DetailItem label="আইডি নম্বর" value={loan.id_number} />
-          <DetailItem label="জন্ম তারিখ" value={loan.birth_date} />
-          <DetailItem label="পরিবারের সদস্য" value={loan.total_members} />
-          <DetailItem label="মোট সন্তান" value={loan.total_children} />
-          <DetailItem label="স্কুলে যায়" value={loan.school_going} />
-          <DetailItem label="৫ বছরের নিচে" value={loan.under_five} />
-          <div style={{ gridColumn: '1 / -1' }}><DetailItem label="লোনের উদ্দেশ্য" value={loan.loan_purpose} icon={MdInfo} /></div>
+          {loan.application_type === 'savings' ? (
+            <div style={{ gridColumn: '1 / -1' }}><DetailItem label="প্রদানের তারিখ" value={loan.disbursement_date} icon={MdCalendarToday} /></div>
+          ) : (
+            <>
+              <div style={{ gridColumn: '1 / -1' }}><DetailItem label="ঠিকানা" value={loan.full_address} icon={MdLocationOn} /></div>
+              <DetailItem label="পিতার নাম" value={loan.father_name} />
+              <DetailItem label="মাতার নাম" value={loan.mother_name} />
+              <DetailItem label="স্বামীর নাম" value={loan.husband_name} />
+              <DetailItem label="কার্ড টাইপ" value={loan.card_type} />
+              <DetailItem label="আইডি নম্বর" value={loan.id_number} />
+              <DetailItem label="জন্ম তারিখ" value={loan.birth_date} />
+              <DetailItem label="পরিবারের সদস্য" value={loan.total_members} />
+              <DetailItem label="মোট সন্তান" value={loan.total_children} />
+              <DetailItem label="স্কুলে যায়" value={loan.school_going} />
+              <DetailItem label="৫ বছরের নিচে" value={loan.under_five} />
+              <DetailItem label="প্রদানের তারিখ" value={loan.disbursement_date} icon={MdCalendarToday} />
+              <div style={{ gridColumn: '1 / -1' }}><DetailItem label="লোনের উদ্দেশ্য" value={loan.loan_purpose} icon={MdInfo} /></div>
+            </>
+          )}
           {loan.notes && <div style={{ gridColumn: '1 / -1' }}><DetailItem label="অতিরিক্ত নোট" value={loan.notes} /></div>}
         </div>
       )}
@@ -166,7 +180,7 @@ const NewLoanPage = () => {
 
   const fetchVOs = useCallback(async () => {
     const { data } = await supabase.from('vo_groups').select('*').order('vo_number')
-    setVoGroups(data || [])
+    setVoGroups((data || []).filter(v => !v.is_disabled))
   }, [])
 
   useEffect(() => {
@@ -197,8 +211,8 @@ const NewLoanPage = () => {
       fetchLoans()
       return true
     } catch (err) {
-      toast.error('ব্যর্থ হয়েছে')
-      console.error(err)
+      console.error('Save error:', err)
+      toast.error(`ব্যর্থ হয়েছে: ${err.message || 'Unknown error'}`)
       return false
     }
   }

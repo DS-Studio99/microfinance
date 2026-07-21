@@ -45,9 +45,12 @@ const TotalDueAmountPage = () => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const disabledNums = voGroups.filter(v => v.is_disabled).map(v => v.vo_number)
+  const activeDueMembers = dueMembers.filter(m => !disabledNums.includes(m.vo_number))
+
   const filtered = selectedVO === 'all'
-    ? dueMembers
-    : dueMembers.filter(m => String(m.vo_number) === selectedVO)
+    ? activeDueMembers
+    : activeDueMembers.filter(m => String(m.vo_number) === selectedVO)
 
   const filteredTotal = filtered.reduce((sum, m) => sum + (m.extra_amount || 0), 0)
 

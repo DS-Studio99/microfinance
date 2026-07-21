@@ -151,7 +151,7 @@ const CollectionCard = ({ data, onComplete, onDelete, onToggleKhata, allowDelete
 
 const CollectionsPage = () => {
   const { pendingCollections, completedCollections, loading, addCollection, markAsCompleted, deleteCollection, updateKhataStatus } = useCollections()
-  const { voGroups } = useVOGroups()
+  const { activeVoGroups: voGroups } = useVOGroups()
   const { allowDelete } = useSettingsStore()
   const [activeTab, setActiveTab] = useState('pending')
   const [showAdd, setShowAdd] = useState(false)

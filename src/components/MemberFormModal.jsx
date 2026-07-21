@@ -8,7 +8,7 @@ import {
 const defaultForm = {
   full_name: '', father_name: '',
   member_number: '',
-  village: '', post_office: '', upazila: '', district: '',
+  village: '',
   phone_number: '', phone_number_2: '', phone_number_3: '',
   vo_number: '',
   loan_amount: '', is_due: false, is_called: false,
@@ -81,9 +81,6 @@ const MemberFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups, defaul
         father_name: editData.father_name || '',
         member_number: editData.member_number || '',
         village: editData.village || '',
-        post_office: editData.post_office || '',
-        upazila: editData.upazila || '',
-        district: editData.district || '',
         phone_number: editData.phone_number || '',
         phone_number_2: editData.phone_number_2 || '',
         phone_number_3: editData.phone_number_3 || '',
@@ -231,11 +228,8 @@ const MemberFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups, defaul
           {/* ── Address ── */}
           <div style={{ marginBottom: '1rem' }}>
             <SectionLabel icon={MdLocationOn} label="ঠিকানা" />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-              <Field label="গ্রাম"><input id="field-village" {...inp('village')} placeholder="গ্রামের নাম" /></Field>
-              <Field label="ডাকঘর"><input id="field-post-office" {...inp('post_office')} placeholder="ডাকঘর" /></Field>
-              <Field label="উপজেলা"><input id="field-upazila" {...inp('upazila')} placeholder="উপজেলা" /></Field>
-              <Field label="জেলা"><input id="field-district" {...inp('district')} placeholder="জেলা" /></Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem' }}>
+              <Field label="সদস্য ঠিকানা"><input id="field-village" {...inp('village')} placeholder="সম্পূর্ণ ঠিকানা লিখুন" /></Field>
             </div>
           </div>
 

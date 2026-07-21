@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { MdCalculate, MdRestartAlt, MdOutlinePayments } from 'react-icons/md'
+import React, { useState, useMemo, useEffect } from 'react'
+import { MdCalculate, MdRestartAlt, MdOutlinePayments, MdSave, MdDeleteOutline } from 'react-icons/md'
 
 const denominations = [
   { value: 1000, label: '১০০০ টাকা' },
@@ -13,9 +13,15 @@ const denominations = [
 ]
 
 const CashCalculator = () => {
-  const [counts, setCounts] = useState(
-    denominations.reduce((acc, curr) => ({ ...acc, [curr.value]: '' }), {})
-  )
+  const [counts, setCounts] = useState(() => {
+    const saved = localStorage.getItem('taka_calculator_counts')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {}
+    }
+    return denominations.reduce((acc, curr) => ({ ...acc, [curr.value]: '' }), {})
+  })
 
   const totals = useMemo(() => {
     let grandTotal = 0
@@ -32,6 +38,17 @@ const CashCalculator = () => {
     setCounts(denominations.reduce((acc, curr) => ({ ...acc, [curr.value]: '' }), {}))
   }
 
+  const handleSave = () => {
+    localStorage.setItem('taka_calculator_counts', JSON.stringify(counts))
+    alert('হিসাব সেইভ করা হয়েছে!')
+  }
+
+  const handleDelete = () => {
+    localStorage.removeItem('taka_calculator_counts')
+    handleReset()
+    alert('সেইভ করা হিসাব ডিলিট করা হয়েছে!')
+  }
+
   const formatBn = (num) => new Intl.NumberFormat('bn-BD').format(num)
 
   return (
@@ -43,14 +60,31 @@ const CashCalculator = () => {
           </div>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: 0 }}>টাকা ক্যালকুলেটর</h3>
         </div>
-        <button 
-          onClick={handleReset}
-          style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}
-          onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-          onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
-        >
-          <MdRestartAlt style={{ fontSize: 16 }} /> মুছে ফেলুন
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button 
+            onClick={handleSave}
+            title="সেইভ করুন"
+            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}
+          >
+            <MdSave style={{ fontSize: 16 }} /> সেইভ
+          </button>
+          <button 
+            onClick={handleDelete}
+            title="ডিলিট করুন"
+            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}
+          >
+            <MdDeleteOutline style={{ fontSize: 16 }} /> ডিলিট
+          </button>
+          <button 
+            onClick={handleReset}
+            title="মুছে ফেলুন"
+            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}
+            onMouseEnter={e => e.currentTarget.style.color = '#f59e0b'}
+            onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+          >
+            <MdRestartAlt style={{ fontSize: 16 }} /> রিসেট
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
@@ -96,3 +130,4 @@ const CashCalculator = () => {
 }
 
 export default CashCalculator
+

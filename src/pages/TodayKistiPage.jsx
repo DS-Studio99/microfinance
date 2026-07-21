@@ -230,7 +230,7 @@ const VOKistiCard = ({ vo, members, idx, navigateToVO }) => {
 // ── Main Page ───────────────────────────────────────────
 const TodayKistiPage = () => {
   const navigate = useNavigate()
-  const { voGroups } = useVOGroups()
+  const { voGroups, disabledVoNumbers } = useVOGroups()
   const [kistiMembers, setKistiMembers] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -263,8 +263,9 @@ const TodayKistiPage = () => {
 
   // Group by VO number
   const byVO = useMemo(() => {
+    const activeKistiMembers = kistiMembers.filter(m => !disabledVoNumbers.includes(m.vo_number))
     const map = {}
-    kistiMembers.forEach(m => {
+    activeKistiMembers.forEach(m => {
       if (!map[m.vo_number]) map[m.vo_number] = []
       map[m.vo_number].push(m)
     })
@@ -276,7 +277,7 @@ const TodayKistiPage = () => {
         members,
         vo: voGroups.find(v => v.vo_number === parseInt(voNum)),
       }))
-  }, [kistiMembers, voGroups])
+  }, [kistiMembers, voGroups, disabledVoNumbers])
 
   return (
     <>

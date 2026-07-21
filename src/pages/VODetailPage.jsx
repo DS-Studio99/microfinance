@@ -51,14 +51,24 @@ const VODetailPage = () => {
 
   const today = new Date().toISOString().split('T')[0]
   const todayMembers = useMemo(() => members.filter(m => m.loan_payment_date === today), [members, today])
-  const filteredMembers = useMemo(() => members.filter(m => {
-    const q = searchQuery.toLowerCase()
-    return (
-      (!searchQuery || m.full_name?.toLowerCase().includes(q) || m.phone_number?.includes(searchQuery)) &&
-      (!filterDue || (filterDue === 'due' ? m.is_due : !m.is_due)) &&
-      (!filterCalled || (filterCalled === 'called' ? m.is_called : !m.is_called))
-    )
-  }), [members, searchQuery, filterDue, filterCalled])
+  const filteredMembers = useMemo(() => {
+    let list = members.filter(m => {
+      const q = searchQuery.toLowerCase()
+      return (
+        (!searchQuery || m.full_name?.toLowerCase().includes(q) || m.phone_number?.includes(searchQuery)) &&
+        (!filterDue || 
+          (filterDue === 'due' ? m.is_due : 
+           filterDue === 'clear' ? !m.is_due : 
+           filterDue === 'paid_today' ? m.last_paid_date === today : true)) &&
+        (!filterCalled || (filterCalled === 'called' ? m.is_called : !m.is_called))
+      )
+    })
+    return list.sort((a, b) => {
+      const numA = a.member_number || ''
+      const numB = b.member_number || ''
+      return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' })
+    })
+  }, [members, searchQuery, filterDue, filterCalled, today])
 
   const voInfo = voGroups.find(v => v.vo_number === voNum)
 
@@ -260,7 +270,7 @@ const VODetailPage = () => {
             {showFilters && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
                 {[
-                  { id: 'vo-filter-due', val: filterDue, onChange: v => setFilterDue(v), opts: [['', 'সকল বকেয়া'], ['due', 'বকেয়া আছে'], ['clear', 'বকেয়া নেই']] },
+                  { id: 'vo-filter-due', val: filterDue, onChange: v => setFilterDue(v), opts: [['', 'সকল বকেয়া'], ['due', 'বকেয়া আছে'], ['clear', 'বকেয়া নেই'], ['paid_today', 'আজকের পরিশোধ']] },
                   { id: 'vo-filter-called', val: filterCalled, onChange: v => setFilterCalled(v), opts: [['', 'কল অবস্থা'], ['called', 'কল হয়েছে'], ['not-called', 'কল হয়নি']] },
                 ].map(({ id, val, onChange, opts }) => (
                   <select key={id} id={id} value={val} onChange={e => onChange(e.target.value)} className="field-input" style={{ fontSize: 13, fontFamily: "'Hind Siliguri', sans-serif" }}>
