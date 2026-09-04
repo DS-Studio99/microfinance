@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import {
   MdArrowBack, MdPerson, MdGroups, MdCheckCircle, MdPendingActions,
   MdHistory, MdAdd, MdDelete, MdEdit, MdAttachMoney, MdArrowForward,
-  MdKeyboardArrowDown, MdKeyboardArrowUp, MdPhone, MdLocationOn, MdInfo, MdClose, MdWarning
+  MdKeyboardArrowDown, MdKeyboardArrowUp, MdPhone, MdLocationOn, MdInfo, MdClose, MdWarning, MdCalendarToday
 } from 'react-icons/md'
 import LoanFormModal from '../components/LoanFormModal'
 
@@ -96,24 +96,13 @@ const LoanCard = ({ loan, onEdit, onDelete, onComplete }) => {
 
       {expanded && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, animation: 'fadeIn 0.3s ease' }}>
-          {loan.application_type === 'savings' ? (
-            <div style={{ gridColumn: '1 / -1' }}><DetailItem label="প্রদানের তারিখ" value={loan.disbursement_date} icon={MdCalendarToday} /></div>
-          ) : (
-            <>
-              <div style={{ gridColumn: '1 / -1' }}><DetailItem label="ঠিকানা" value={loan.full_address} icon={MdLocationOn} /></div>
-              <DetailItem label="পিতার নাম" value={loan.father_name} />
-              <DetailItem label="মাতার নাম" value={loan.mother_name} />
-              <DetailItem label="স্বামীর নাম" value={loan.husband_name} />
-              <DetailItem label="কার্ড টাইপ" value={loan.card_type} />
-              <DetailItem label="আইডি নম্বর" value={loan.id_number} />
-              <DetailItem label="জন্ম তারিখ" value={loan.birth_date} />
-              <DetailItem label="পরিবারের সদস্য" value={loan.total_members} />
-              <DetailItem label="মোট সন্তান" value={loan.total_children} />
-              <DetailItem label="স্কুলে যায়" value={loan.school_going} />
-              <DetailItem label="৫ বছরের নিচে" value={loan.under_five} />
-              <DetailItem label="প্রদানের তারিখ" value={loan.disbursement_date} icon={MdCalendarToday} />
-              <div style={{ gridColumn: '1 / -1' }}><DetailItem label="লোনের উদ্দেশ্য" value={loan.loan_purpose} icon={MdInfo} /></div>
-            </>
+          <div style={{ gridColumn: loan.application_type === 'savings' ? '1 / -1' : 'auto' }}>
+            <DetailItem label="প্রদানের তারিখ" value={loan.disbursement_date} icon={MdCalendarToday} />
+          </div>
+          {loan.application_type === 'loan' && (
+            <div style={{ gridColumn: 'auto' }}>
+              <DetailItem label="লোনের উদ্দেশ্য" value={loan.loan_purpose} icon={MdInfo} />
+            </div>
           )}
           {loan.notes && <div style={{ gridColumn: '1 / -1' }}><DetailItem label="অতিরিক্ত নোট" value={loan.notes} /></div>}
         </div>

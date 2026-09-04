@@ -13,7 +13,7 @@ const defaultForm = {
   vo_number: '',
   loan_amount: '', is_due: false, is_called: false,
   loan_payment_date: '',
-  loan_cleared_date: '',
+  loan_disbursement_date: '',
   expected_payment_date: '',
   extra_amount: '',
   extra_amount_date: '',
@@ -89,7 +89,7 @@ const MemberFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups, defaul
         is_due: editData.is_due || false,
         is_called: editData.is_called || false,
         loan_payment_date: editData.loan_payment_date || '',
-        loan_cleared_date: editData.loan_cleared_date || '',
+        loan_disbursement_date: editData.loan_disbursement_date || '',
         expected_payment_date: editData.expected_payment_date || '',
         extra_amount: editData.extra_amount || '',
         extra_amount_date: editData.extra_amount_date || '',
@@ -128,9 +128,9 @@ const MemberFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups, defaul
       vo_number: parseInt(form.vo_number),
       loan_amount:   form.loan_amount   ? parseFloat(form.loan_amount)   : null,
       extra_amount:  form.extra_amount  ? parseFloat(form.extra_amount)  : null,
-      loan_payment_date:     form.loan_payment_date     || null,
-      loan_cleared_date:     form.loan_cleared_date     || null,
-      expected_payment_date: form.expected_payment_date || null,
+      loan_payment_date:      form.loan_payment_date      || null,
+      loan_disbursement_date: form.loan_disbursement_date || null,
+      expected_payment_date:  form.expected_payment_date  || null,
       extra_amount_date:     form.extra_amount_date     || null,
       extra_amount_note:     form.extra_amount_note     || null,
     })
@@ -268,12 +268,12 @@ const MemberFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups, defaul
                 </div>
               </Field>
 
-              {/* Cleared date */}
-              <Field label="ঋণ পরিশোধের তারিখ" hint="পরিশোধ হলে">
+              {/* Loan disbursement date */}
+              <Field label="ঋণ বিতরণের তারিখ" hint="বিতরণের তারিখ">
                 <div style={{ position: 'relative' }}>
-                  <input id="field-loan-cleared-date" {...inp('loan_cleared_date')} type="date"
-                    style={{ fontFamily: "'Hind Siliguri', sans-serif", paddingRight: 32, background: form.loan_cleared_date ? '#f0fdf4' : undefined, borderColor: form.loan_cleared_date ? '#86efac' : undefined }} />
-                  <MdEventAvailable style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: form.loan_cleared_date ? '#22c55e' : '#94a3b8', fontSize: 15, pointerEvents: 'none' }} />
+                  <input id="field-loan-disbursement-date" {...inp('loan_disbursement_date')} type="date"
+                    style={{ fontFamily: "'Hind Siliguri', sans-serif", paddingRight: 32, background: form.loan_disbursement_date ? '#f0fdf4' : undefined, borderColor: form.loan_disbursement_date ? '#86efac' : undefined }} />
+                  <MdCalendarToday style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: form.loan_disbursement_date ? '#16a34a' : '#94a3b8', fontSize: 15, pointerEvents: 'none' }} />
                 </div>
               </Field>
             </div>

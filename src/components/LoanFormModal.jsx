@@ -1,34 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import {
-  MdClose, MdPerson, MdHome, MdGroups, MdBadge, MdCalendarToday,
-  MdCreditCard, MdFamilyRestroom, MdChildCare, MdSchool, MdCheck,
-  MdArrowForward, MdSave, MdAttachMoney, MdNotes, MdEvent
+  MdClose, MdPerson, MdGroups, MdBadge,
+  MdCheck, MdArrowForward, MdSave, MdAttachMoney, MdNotes, MdEvent, MdInfo
 } from 'react-icons/md'
 import { useMembers } from '../hooks/useMembers'
-
-const CARD_TYPES = ['NID', 'জন্ম নিবন্ধন সনদ']
 
 const initialForm = {
   application_type: 'loan', // 'loan' or 'savings'
   member_name: '',
-  full_address: '',
   vo_number: '',
   member_number: '',
-  birth_date: '',
-  card_type: 'NID',
-  id_number: '',
-  father_name: '',
-  mother_name: '',
-  husband_name: '',
-  total_members: '',
-  total_children: '',
-  school_going: '',
-  under_five: '',
+  phone_number: '',
   loan_amount: '',
   loan_purpose: '',
   disbursement_date: '',
   notes: '',
-  phone_number: '',
   status: 'pending'
 }
 
@@ -62,10 +48,6 @@ const LoanFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups }) => {
         ...editData,
         application_type: editData.application_type || 'loan',
         loan_amount: editData.loan_amount?.toString() || '',
-        total_members: editData.total_members?.toString() || '',
-        total_children: editData.total_children?.toString() || '',
-        school_going: editData.school_going?.toString() || '',
-        under_five: editData.under_five?.toString() || '',
       })
     } else {
       setForm(initialForm)
@@ -78,8 +60,7 @@ const LoanFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups }) => {
   const handleChange = (key, val) => {
     setForm(f => {
       const newForm = { ...f, [key]: val }
-      // If changing VO, reset member selection in savings mode
-      if (key === 'vo_number' && newForm.application_type === 'savings') {
+      if (key === 'vo_number') {
         newForm.member_name = ''
         newForm.member_number = ''
         newForm.phone_number = ''
@@ -106,8 +87,8 @@ const LoanFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.member_name || !form.member_name.trim()) return alert('সদস্যের নাম দিন')
     if (!form.vo_number) return alert('ভিও নম্বর দিন')
+    if (!form.member_name || !form.member_name.trim()) return alert('সদস্যের নাম দিন')
     if (!form.loan_amount) return alert('টাকার পরিমাণ দিন')
     
     setSubmitting(true)
@@ -115,13 +96,8 @@ const LoanFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups }) => {
       const success = await onSubmit({
         ...form,
         loan_amount: form.loan_amount ? parseFloat(form.loan_amount) : null,
-        total_members: form.total_members ? parseInt(form.total_members) : null,
-        total_children: form.total_children ? parseInt(form.total_children) : null,
-        school_going: form.school_going ? parseInt(form.school_going) : null,
-        under_five: form.under_five ? parseInt(form.under_five) : null,
         vo_number: parseInt(form.vo_number),
-        disbursement_date: form.disbursement_date || null,
-        birth_date: form.birth_date || null // Fix empty string to null for birth_date
+        disbursement_date: form.disbursement_date || null
       })
       if (success) onClose()
     } catch (err) {
@@ -144,8 +120,7 @@ const LoanFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups }) => {
   const stepInfo = isLoan 
     ? [
         { num: 1, title: 'ব্যক্তিগত', icon: MdPerson },
-        { num: 2, title: 'পরিবার', icon: MdFamilyRestroom },
-        { num: 3, title: 'লোন', icon: MdBadge },
+        { num: 2, title: 'লোন', icon: MdAttachMoney },
       ]
     : [
         { num: 1, title: 'ব্যক্তিগত', icon: MdPerson },
@@ -213,61 +188,57 @@ const LoanFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups }) => {
                   {voGroups.map(v => <option key={v.id} value={v.vo_number}>VO-{v.vo_number}</option>)}
                 </select>
               </FormField>
-              
-              {!isLoan ? (
-                <>
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <FormField label="সদস্য নির্বাচন করুন *" icon={MdPerson}>
-                      <select 
-                        style={fieldStyle} 
-                        onChange={e => handleMemberSelect(e.target.value)} 
-                        disabled={!form.vo_number}
-                        value={members.find(m => m.member_number === form.member_number)?.id || ''}
-                      >
-                        <option value="">{form.vo_number ? 'সদস্য নির্বাচন করুন' : 'প্রথমে ভিও নির্বাচন করুন'}</option>
-                        {members.map(m => (
-                          <option key={m.id} value={m.id}>{m.member_name || m.full_name} (নং: {m.member_number})</option>
-                        ))}
-                      </select>
-                    </FormField>
-                  </div>
-                  <FormField label="সদস্য নম্বর *" icon={MdBadge}><input style={fieldStyle} placeholder="সদস্য নং" value={form.member_number} readOnly disabled /></FormField>
-                  <div style={{ gridColumn: '1/-1' }}><FormField label="মোবাইল নম্বর" icon={MdPerson}><input style={fieldStyle} placeholder="০১XXXXXXXXX" value={form.phone_number} onChange={e => handleChange('phone_number', e.target.value)} /></FormField></div>
-                </>
-              ) : (
-                <>
-                  <FormField label="সদস্য নম্বর *" icon={MdBadge}><input style={fieldStyle} placeholder="সদস্য নং" value={form.member_number} onChange={e => handleChange('member_number', e.target.value)} /></FormField>
-                  <div style={{ gridColumn: '1/-1' }}><FormField label="সদস্যের নাম *" icon={MdPerson}><input style={fieldStyle} placeholder="নাম লিখুন" value={form.member_name} onChange={e => handleChange('member_name', e.target.value)} /></FormField></div>
-                  <div style={{ gridColumn: '1/-1' }}><FormField label="মোবাইল নম্বর" icon={MdPerson}><input style={fieldStyle} placeholder="০১XXXXXXXXX" value={form.phone_number} onChange={e => handleChange('phone_number', e.target.value)} /></FormField></div>
-                  <div style={{ gridColumn: '1/-1' }}><FormField label="পূর্ণ ঠিকানা" icon={MdHome}><textarea style={{ ...fieldStyle, minHeight: 60 }} placeholder="ঠিকানা লিখুন" value={form.full_address} onChange={e => handleChange('full_address', e.target.value)} /></FormField></div>
-                  <FormField label="জন্ম তারিখ" icon={MdCalendarToday}><input type="date" style={fieldStyle} value={form.birth_date} onChange={e => handleChange('birth_date', e.target.value)} /></FormField>
-                  <FormField label="কার্ড টাইপ" icon={MdCreditCard}><select style={fieldStyle} value={form.card_type} onChange={e => handleChange('card_type', e.target.value)}>{CARD_TYPES.map(c => <option key={c} value={c}>{c}</option>)}</select></FormField>
-                  <div style={{ gridColumn: '1/-1' }}><FormField label="আইডি নম্বর" icon={MdCreditCard}><input style={fieldStyle} placeholder="NID / জন্ম নিবন্ধন" value={form.id_number} onChange={e => handleChange('id_number', e.target.value)} /></FormField></div>
-                  <FormField label="পিতার নাম"><input style={fieldStyle} value={form.father_name} onChange={e => handleChange('father_name', e.target.value)} /></FormField>
-                  <FormField label="মাতার নাম"><input style={fieldStyle} value={form.mother_name} onChange={e => handleChange('mother_name', e.target.value)} /></FormField>
-                  <div style={{ gridColumn: '1/-1' }}><FormField label="স্বামীর নাম"><input style={fieldStyle} value={form.husband_name} onChange={e => handleChange('husband_name', e.target.value)} /></FormField></div>
-                </>
-              )}
+
+              <div style={{ gridColumn: '1/-1' }}>
+                <FormField label="সদস্য নির্বাচন করুন" icon={MdPerson}>
+                  <select 
+                    style={fieldStyle} 
+                    onChange={e => handleMemberSelect(e.target.value)} 
+                    disabled={!form.vo_number}
+                    value={members.find(m => m.member_number === form.member_number)?.id || ''}
+                  >
+                    <option value="">{form.vo_number ? 'তালিকা থেকে সদস্য নির্বাচন করুন (ঐচ্ছিক)' : 'প্রথমে ভিও নির্বাচন করুন'}</option>
+                    {members.map(m => (
+                      <option key={m.id} value={m.id}>{m.member_name || m.full_name} (নং: {m.member_number})</option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+
+              <FormField label="সদস্য নম্বর *" icon={MdBadge}>
+                <input style={fieldStyle} placeholder="সদস্য নং" value={form.member_number} onChange={e => handleChange('member_number', e.target.value)} />
+              </FormField>
+
+              <FormField label="মোবাইল নম্বর" icon={MdPerson}>
+                <input style={fieldStyle} placeholder="০১XXXXXXXXX" value={form.phone_number} onChange={e => handleChange('phone_number', e.target.value)} />
+              </FormField>
+
+              <div style={{ gridColumn: '1/-1' }}>
+                <FormField label="সদস্যের নাম *" icon={MdPerson}>
+                  <input style={fieldStyle} placeholder="সদস্যের নাম লিখুন" value={form.member_name} onChange={e => handleChange('member_name', e.target.value)} />
+                </FormField>
+              </div>
             </div>
           )}
 
-          {step === 2 && isLoan && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-              <FormField label="পরিবারের সদস্য" icon={MdFamilyRestroom}><input type="number" style={fieldStyle} value={form.total_members} onChange={e => handleChange('total_members', e.target.value)} /></FormField>
-              <FormField label="মোট সন্তান" icon={MdChildCare}><input type="number" style={fieldStyle} value={form.total_children} onChange={e => handleChange('total_children', e.target.value)} /></FormField>
-              <FormField label="স্কুলে যায়" icon={MdSchool}><input type="number" style={fieldStyle} value={form.school_going} onChange={e => handleChange('school_going', e.target.value)} /></FormField>
-              <FormField label="৫ বছরের নিচে" icon={MdChildCare}><input type="number" style={fieldStyle} value={form.under_five} onChange={e => handleChange('under_five', e.target.value)} /></FormField>
-            </div>
-          )}
-
-          {(step === 3 && isLoan) || (step === 2 && !isLoan) ? (
+          {step === 2 && (
             <div>
-              <FormField label={isLoan ? "লোনের পরিমাণ (৳) *" : "উত্তোলনের পরিমাণ (৳) *"} icon={MdAttachMoney}><input type="number" style={fieldStyle} value={form.loan_amount} onChange={e => handleChange('loan_amount', e.target.value)} /></FormField>
-              <FormField label="প্রদানের তারিখ" icon={MdEvent}><input type="date" style={fieldStyle} value={form.disbursement_date || ''} onChange={e => handleChange('disbursement_date', e.target.value)} /></FormField>
-              {isLoan && <FormField label="লোনের উদ্দেশ্য"><input style={fieldStyle} value={form.loan_purpose} onChange={e => handleChange('loan_purpose', e.target.value)} /></FormField>}
-              <FormField label="অতিরিক্ত নোট" icon={MdNotes}><textarea style={{ ...fieldStyle, minHeight: 80 }} value={form.notes} onChange={e => handleChange('notes', e.target.value)} /></FormField>
+              <FormField label={isLoan ? "লোনের পরিমাণ (৳) *" : "উত্তোলনের পরিমাণ (৳) *"} icon={MdAttachMoney}>
+                <input type="number" style={fieldStyle} value={form.loan_amount} onChange={e => handleChange('loan_amount', e.target.value)} />
+              </FormField>
+              <FormField label="প্রদানের তারিখ" icon={MdEvent}>
+                <input type="date" style={fieldStyle} value={form.disbursement_date || ''} onChange={e => handleChange('disbursement_date', e.target.value)} />
+              </FormField>
+              {isLoan && (
+                <FormField label="লোনের উদ্দেশ্য" icon={MdInfo}>
+                  <input style={fieldStyle} placeholder="যেমন: ব্যবসা, কৃষি ইত্যাদি" value={form.loan_purpose} onChange={e => handleChange('loan_purpose', e.target.value)} />
+                </FormField>
+              )}
+              <FormField label="অতিরিক্ত নোট" icon={MdNotes}>
+                <textarea style={{ ...fieldStyle, minHeight: 80 }} placeholder="নোট লিখুন..." value={form.notes} onChange={e => handleChange('notes', e.target.value)} />
+              </FormField>
             </div>
-          ) : null}
+          )}
         </div>
 
         {/* Footer */}
@@ -294,3 +265,4 @@ const LoanFormModal = ({ isOpen, onClose, onSubmit, editData, voGroups }) => {
 }
 
 export default LoanFormModal
+

@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   MdCheckCircle, MdCancel, MdPhone, MdPhoneDisabled,
-  MdEdit, MdDelete, MdCalendarToday, MdLocationOn, MdAttachMoney,
+  MdEdit, MdDelete, MdCalendarToday, MdLocationOn,
   MdWarning, MdAccessTime, MdMoreVert, MdCurrencyExchange,
-  MdEventAvailable, MdMessage, MdQuestionMark, MdClose,
-  MdSchedule, MdNotes, MdVerified,
+  MdEventAvailable, MdSchedule, MdNotes, MdVerified,
 } from 'react-icons/md'
 import { RiWhatsappFill } from 'react-icons/ri'
 import { useSettingsStore } from '../store/settingsStore'
@@ -12,9 +11,7 @@ import { useSettingsStore } from '../store/settingsStore'
 // ─────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────
-export const formatAddress = (m) => {
-  return m.village || ''
-}
+export const formatAddress = (m) => m.village || ''
 
 export const formatMoney = (amount) => {
   if (!amount) return '—'
@@ -36,13 +33,12 @@ export const getDaysOverdue = (date) => {
 
 const getSeverity = (days) => {
   if (!days) return null
-  if (days >= 90) return { bg: '#450a0a', pill: '#7f1d1d', label: 'অতি জরুরি' }
+  if (days >= 90) return { bg: '#dc2626', pill: '#7f1d1d', label: 'অতি জরুরি' }
   if (days >= 30) return { bg: '#dc2626', pill: '#b91c1c', label: 'গুরুতর' }
   if (days >= 7) return { bg: '#ea580c', pill: '#c2410c', label: 'মনোযোগ দিন' }
   return { bg: '#d97706', pill: '#b45309', label: 'সামান্য' }
 }
 
-// International Bangladesh phone (for WA/IMO)
 const intlPhone = (phone) => {
   if (!phone) return ''
   const digits = phone.replace(/\D/g, '')
@@ -56,25 +52,24 @@ const intlPhone = (phone) => {
 // ─────────────────────────────────────────
 const ConfirmPopover = ({ message, onConfirm, onCancel }) => (
   <div style={{
-    position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
-    zIndex: 200, background: '#1e293b', color: '#fff',
-    borderRadius: 14, padding: '10px 14px',
-    boxShadow: '0 8px 28px rgba(0,0,0,0.3)',
-    minWidth: 200, animation: 'scaleUp 0.15s ease-out',
+    position: 'absolute', bottom: '115%', left: '50%', transform: 'translateX(-50%)',
+    zIndex: 200, background: '#0f172a', color: '#fff',
+    borderRadius: 10, padding: '6px 10px',
+    boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+    minWidth: 180, animation: 'scaleUp 0.15s ease-out',
     whiteSpace: 'nowrap',
   }}>
-    {/* Arrow */}
-    <div style={{ position: 'absolute', bottom: -6, left: '50%', transform: 'translateX(-50%)', width: 12, height: 12, background: '#1e293b', borderRadius: 2, rotate: '45deg' }} />
-    <p style={{ fontSize: 12, fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 8, textAlign: 'center', color: '#e2e8f0' }}>{message}</p>
-    <div style={{ display: 'flex', gap: 6 }}>
-      <button onClick={onCancel} style={{ flex: 1, padding: '5px 0', borderRadius: 8, border: '1px solid #475569', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: 12, fontFamily: "'Hind Siliguri', sans-serif" }}>না</button>
-      <button onClick={onConfirm} style={{ flex: 1, padding: '5px 0', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>হ্যাঁ</button>
+    <div style={{ position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)', width: 8, height: 8, background: '#0f172a', borderRadius: 1, rotate: '45deg' }} />
+    <p style={{ fontSize: 10.5, fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 5, textAlign: 'center', color: '#e2e8f0' }}>{message}</p>
+    <div style={{ display: 'flex', gap: 4 }}>
+      <button onClick={onCancel} style={{ flex: 1, padding: '3px 0', borderRadius: 4, border: '1px solid #475569', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: 10, fontFamily: "'Hind Siliguri', sans-serif" }}>না</button>
+      <button onClick={onConfirm} style={{ flex: 1, padding: '3px 0', borderRadius: 4, border: 'none', background: '#4f46e5', color: '#fff', cursor: 'pointer', fontSize: 10, fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>হ্যাঁ</button>
     </div>
   </div>
 )
 
 // ─────────────────────────────────────────
-// ToggleButton with confirm
+// Toggle Button (Ultra-compact)
 // ─────────────────────────────────────────
 const ToggleWithConfirm = ({ id, on, onColor, onClick, icon: Icon, label, confirmMsg }) => {
   const [pending, setPending] = useState(false)
@@ -93,19 +88,21 @@ const ToggleWithConfirm = ({ id, on, onColor, onClick, icon: Icon, label, confir
         id={id}
         onClick={() => setPending(true)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          padding: '5px 10px', borderRadius: 20, border: 'none',
-          cursor: 'pointer', fontSize: 11, fontFamily: "'Hind Siliguri', sans-serif",
-          fontWeight: 600, transition: 'all 0.18s',
+          display: 'flex', alignItems: 'center', gap: 3,
+          padding: '3px 7px', borderRadius: 12, border: 'none',
+          cursor: 'pointer', fontSize: 10, fontFamily: "'Hind Siliguri', sans-serif",
+          fontWeight: 600, transition: 'all 0.15s',
           ...(on
             ? onColor === 'red'
               ? { background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' }
-              : { background: '#dbeafe', color: '#1e3a8a', border: '1px solid #93c5fd' }
-            : { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }
+              : onColor === 'green'
+                ? { background: '#dcfce7', color: '#166534', border: '1px solid #86efac' }
+                : { background: '#dbeafe', color: '#1e3a8a', border: '1px solid #93c5fd' }
+            : { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' }
           ),
         }}
       >
-        <Icon style={{ fontSize: 12 }} />{label}
+        <Icon style={{ fontSize: 11 }} />{label}
       </button>
       {pending && (
         <ConfirmPopover
@@ -132,7 +129,7 @@ const ActionWithConfirm = ({ onClick, icon: Icon, label, confirmMsg, colorTheme 
   const colors = {
     green: { bg: '#dcfce7', text: '#166534', border: '#86efac' },
     blue: { bg: '#dbeafe', text: '#1e3a8a', border: '#93c5fd' },
-    gray: { bg: '#f3f4f6', text: '#6b7280', border: '#e5e7eb' }
+    gray: { bg: '#f1f5f9', text: '#334155', border: '#cbd5e1' }
   }[colorTheme]
 
   return (
@@ -140,14 +137,14 @@ const ActionWithConfirm = ({ onClick, icon: Icon, label, confirmMsg, colorTheme 
       <button
         onClick={() => setPending(true)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          padding: '5px 10px', borderRadius: 20, border: `1px solid ${colors.border}`,
+          display: 'flex', alignItems: 'center', gap: 3,
+          padding: '3px 7px', borderRadius: 12, border: `1px solid ${colors.border}`,
           background: colors.bg, color: colors.text,
-          cursor: 'pointer', fontSize: 11, fontFamily: "'Hind Siliguri', sans-serif",
-          fontWeight: 600, transition: 'all 0.18s',
+          cursor: 'pointer', fontSize: 10, fontFamily: "'Hind Siliguri', sans-serif",
+          fontWeight: 600, transition: 'all 0.15s',
         }}
       >
-        <Icon style={{ fontSize: 13 }} />{label}
+        <Icon style={{ fontSize: 11 }} />{label}
       </button>
       {pending && (
         <ConfirmPopover
@@ -161,7 +158,7 @@ const ActionWithConfirm = ({ onClick, icon: Icon, label, confirmMsg, colorTheme 
 }
 
 // ─────────────────────────────────────────
-// 3-dot menu
+// 3-dot Menu
 // ─────────────────────────────────────────
 const ThreeDotMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
   const [open, setOpen] = useState(false)
@@ -178,7 +175,7 @@ const ThreeDotMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
       <button
         onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
         style={{
-          width: 30, height: 30, borderRadius: 8,
+          width: 24, height: 24, borderRadius: 6,
           border: '1px solid #e2e8f0',
           background: open ? '#f1f5f9' : '#fff',
           color: '#64748b', cursor: 'pointer',
@@ -186,29 +183,29 @@ const ThreeDotMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
           flexShrink: 0,
         }}
       >
-        <MdMoreVert style={{ fontSize: 18 }} />
+        <MdMoreVert style={{ fontSize: 15 }} />
       </button>
       {open && (
         <div style={{
-          position: 'absolute', top: 34, right: 0, zIndex: 300,
-          background: '#fff', borderRadius: 12,
-          boxShadow: '0 8px 30px rgba(15,23,42,0.15)',
-          border: '1px solid #e8edf3', overflow: 'hidden', minWidth: 130,
+          position: 'absolute', top: 28, right: 0, zIndex: 300,
+          background: '#fff', borderRadius: 8,
+          boxShadow: '0 6px 20px rgba(15,23,42,0.15)',
+          border: '1px solid #e2e8f0', overflow: 'hidden', minWidth: 110,
           animation: 'scaleUp 0.15s ease-out',
         }}>
           {allowEdit && (
-            <button onClick={() => { setOpen(false); onEdit() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#4338ca', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
+            <button onClick={() => { setOpen(false); onEdit() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', border: 'none', background: 'none', color: '#4338ca', fontSize: 11, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.background = '#eef2ff'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-              <MdEdit style={{ fontSize: 16 }} />সম্পাদনা
+              <MdEdit style={{ fontSize: 13 }} />সম্পাদনা
             </button>
           )}
           {allowEdit && allowDelete && <div style={{ height: 1, background: '#f1f5f9' }} />}
           {allowDelete && (
-            <button onClick={() => { setOpen(false); onDelete() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.9rem', border: 'none', background: 'none', color: '#dc2626', fontSize: 13, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
+            <button onClick={() => { setOpen(false); onDelete() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', border: 'none', background: 'none', color: '#dc2626', fontSize: 11, fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif", cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-              <MdDelete style={{ fontSize: 16 }} />মুছে ফেলুন
+              <MdDelete style={{ fontSize: 13 }} />মুছে ফেলুন
             </button>
           )}
         </div>
@@ -218,23 +215,7 @@ const ThreeDotMenu = ({ onEdit, onDelete, allowEdit, allowDelete }) => {
 }
 
 // ─────────────────────────────────────────
-// Info row
-// ─────────────────────────────────────────
-const InfoRow = ({ icon: Icon, iconColor = '#94a3b8', children, highlight }) => (
-  <div style={{
-    display: 'flex', alignItems: 'flex-start', gap: 6,
-    padding: highlight ? '5px 8px' : '2px 0',
-    borderRadius: highlight ? 8 : 0,
-    background: highlight || 'transparent',
-    margin: highlight ? '1px -2px' : 0,
-  }}>
-    <Icon style={{ fontSize: 13, color: iconColor, marginTop: 1.5, flexShrink: 0 }} />
-    <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
-  </div>
-)
-
-// ─────────────────────────────────────────
-// Main Card
+// Main Ultra-Compact MemberCard
 // ─────────────────────────────────────────
 const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onMarkPaid, onToggleConfirmed, onToggleLatePayer }) => {
   const { allowEdit, allowDelete } = useSettingsStore()
@@ -246,98 +227,65 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
   const hasClearedDate = !!member.loan_cleared_date
   const hasExpectedDate = !!member.expected_payment_date
   const isPaidToday = member.last_paid_date === today
-  const phone = member.phone_number || ''
-  const intl = intlPhone(phone)
+  const phones = [member.phone_number, member.phone_number_2, member.phone_number_3].filter(Boolean)
+  const address = formatAddress(member)
+
+  // Status indicator style
+  const statusColor = hasClearedDate
+    ? '#22c55e'
+    : isPaidToday
+      ? '#10b981'
+      : isToday
+        ? '#f59e0b'
+        : daysOverdue && member.is_due
+          ? '#ef4444'
+          : null
 
   return (
     <div style={{
-      background: '#fff', borderRadius: 18,
-      border: hasClearedDate
-        ? '1.5px solid #86efac'
-        : isPaidToday
-          ? '1.5px solid #6ee7b7'
-          : isToday
-            ? '1.5px solid #fbbf24'
-            : daysOverdue && member.is_due
-              ? '1.5px solid #fca5a5'
-              : '1px solid #e8edf3',
-      boxShadow: daysOverdue && member.is_due
-        ? '0 4px 20px rgba(239,68,68,0.1)'
-        : '0 2px 10px rgba(15,23,42,0.07)',
+      background: '#fff', borderRadius: 12,
+      border: statusColor ? `1.5px solid ${statusColor}` : '1px solid #e2e8f0',
+      boxShadow: '0 2px 6px rgba(15,23,42,0.03)',
       overflow: 'hidden',
-      transition: 'transform 0.18s, box-shadow 0.18s',
+      transition: 'all 0.15s ease',
+      position: 'relative',
     }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(15,23,42,0.12)' }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(15,23,42,0.08)' }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 6px rgba(15,23,42,0.03)' }}
     >
+      {/* Sleek top 3px accent line */}
+      {statusColor && <div style={{ height: 3, background: statusColor, width: '100%' }} />}
 
-      {/* ── Top colour banner ── */}
-      {hasClearedDate ? (
-        <div style={{ background: 'linear-gradient(90deg,#16a34a,#22c55e)', padding: '5px 13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, fontFamily: "'Hind Siliguri', sans-serif" }}>
-            <MdEventAvailable style={{ fontSize: 13 }} />ঋণ পরিশোধ সম্পন্ন
-          </span>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontFamily: "'Hind Siliguri', sans-serif" }}>{formatDate(member.loan_cleared_date)}</span>
-        </div>
-      ) : isPaidToday ? (
-        <div style={{ background: 'linear-gradient(90deg,#059669,#10b981)', padding: '5px 13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, fontFamily: "'Hind Siliguri', sans-serif" }}>
-            <MdCheckCircle style={{ fontSize: 12 }} />আজকে পরিশোধ হয়েছে
-          </span>
-        </div>
-      ) : isToday ? (
-        <div style={{ background: 'linear-gradient(90deg,#f59e0b,#fb923c)', padding: '5px 13px' }}>
-          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, fontFamily: "'Hind Siliguri', sans-serif" }}>
-            <MdCalendarToday style={{ fontSize: 12 }} />আজ কিস্তির নির্ধারিত তারিখ
-          </span>
-        </div>
-      ) : daysOverdue && member.is_due && sev ? (
-        <div style={{ background: `linear-gradient(90deg,${sev.bg},${sev.pill})`, padding: '5px 13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, fontFamily: "'Hind Siliguri', sans-serif" }}>
-            <MdWarning style={{ fontSize: 13 }} />মেয়াদ উত্তীর্ণ — {sev.label}
-          </span>
-          <span style={{ background: 'rgba(255,255,255,0.22)', borderRadius: 20, padding: '1px 8px', color: '#fff', fontSize: 11, fontWeight: 800, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 3 }}>
-            <MdAccessTime style={{ fontSize: 11 }} />{daysOverdue} দিন
-          </span>
-        </div>
-      ) : null}
+      <div style={{ padding: '7px 9px 6px' }}>
 
-      <div style={{ padding: '11px 12px 10px' }}>
-
-        {/* ── Name row ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 5 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-              <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.25, wordBreak: 'break-word', margin: 0 }}>
-                {member.full_name}
-              </h3>
-              {member.is_confirmed && (
-                <div title="নিশ্চিত কিস্তি পাবো" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: 20, height: 20, flexShrink: 0 }}>
-                  <MdVerified style={{ fontSize: 13 }} />
-                </div>
-              )}
-            </div>
-            {member.father_name && (
-              <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: "'Hind Siliguri', sans-serif", margin: '2px 0 0 0' }}>স্বামী/পিতা: {member.father_name}</p>
+        {/* ── Line 1: Name, Badges & Actions ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginBottom: 2 }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <h3 style={{ fontWeight: 800, fontSize: 13.5, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif", margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {member.full_name}
+            </h3>
+            {member.is_confirmed && (
+              <MdVerified style={{ fontSize: 13, color: '#10b981', flexShrink: 0 }} title="নিশ্চিত কিস্তি পাবো" />
             )}
+            {/* Status Pill inline */}
+            {hasClearedDate ? (
+              <span style={{ fontSize: 9, background: '#dcfce7', color: '#15803d', borderRadius: 4, padding: '1px 4px', fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>পরিশোধিত</span>
+            ) : isPaidToday ? (
+              <span style={{ fontSize: 9, background: '#d1fae5', color: '#047857', borderRadius: 4, padding: '1px 4px', fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>আজ পরিশোধ</span>
+            ) : isToday ? (
+              <span style={{ fontSize: 9, background: '#fef3c7', color: '#b45309', borderRadius: 4, padding: '1px 4px', fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>আজ নির্ধারণ</span>
+            ) : daysOverdue && member.is_due ? (
+              <span style={{ fontSize: 9, background: '#fee2e2', color: '#991b1b', borderRadius: 4, padding: '1px 4px', fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>+{daysOverdue}দিন</span>
+            ) : null}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {/* Member number badge */}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
             {member.member_number && (
-              <span style={{
-                background: 'linear-gradient(135deg,#0f172a,#1e293b)',
-                color: '#e2e8f0',
-                borderRadius: 8, padding: '3px 8px',
-                fontSize: 10, fontWeight: 700,
-                whiteSpace: 'nowrap',
-                display: 'flex', alignItems: 'center', gap: 3,
-                letterSpacing: 0.3,
-              }}>
-                # {member.member_number}
+              <span style={{ background: '#f1f5f9', color: '#334155', borderRadius: 4, padding: '1px 5px', fontSize: 9.5, fontWeight: 700 }}>
+                #{member.member_number}
               </span>
             )}
-            {/* VO badge */}
-            <span style={{ background: '#eef2ff', color: '#4338ca', borderRadius: 8, padding: '3px 7px', fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap' }}>
+            <span style={{ background: '#e0e7ff', color: '#3730a3', borderRadius: 4, padding: '1px 5px', fontSize: 9.5, fontWeight: 700 }}>
               VO-{String(member.vo_number).padStart(2, '0')}
             </span>
             {(allowEdit || allowDelete) && (
@@ -346,154 +294,99 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
           </div>
         </div>
 
-        {/* ── Address ── */}
-        {formatAddress(member) && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, marginBottom: 8 }}>
-            <MdLocationOn style={{ fontSize: 12, color: '#94a3b8', marginTop: 1.5, flexShrink: 0 }} />
-            <p style={{ fontSize: 11, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.4 }}>{formatAddress(member)}</p>
+        {/* ── Line 2: Father Name & Address inline ── */}
+        {(member.father_name || address) && (
+          <div style={{ fontSize: 10, color: '#64748b', fontFamily: "'Hind Siliguri', sans-serif", marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {member.father_name && <span>স্বামী/পিতা: {member.father_name}</span>}
+            {member.father_name && address && <span style={{ color: '#cbd5e1', margin: '0 4px' }}>•</span>}
+            {address && <span><MdLocationOn style={{ fontSize: 10, color: '#94a3b8', verticalAlign: 'middle', marginRight: 1 }} />{address}</span>}
           </div>
         )}
 
-        {/* ── Info block ── */}
-        <div style={{ background: '#f8fafc', borderRadius: 11, padding: '8px 10px', marginBottom: 9, display: 'flex', flexDirection: 'column', gap: 5 }}>
-
-          {/* Multiple Phone numbers + action buttons */}
-          {[member.phone_number, member.phone_number_2, member.phone_number_3].filter(Boolean).length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {[member.phone_number, member.phone_number_2, member.phone_number_3].filter(Boolean).map((phoneObj, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                  <MdPhone style={{ fontSize: 13, color: '#6366f1', flexShrink: 0 }} />
-                  <a href={`tel:${phoneObj}`} style={{ fontSize: 12, color: '#4f46e5', fontWeight: 600, textDecoration: 'none' }} title="কল করুন">
+        {/* ── Compact Integrated Info Box ── */}
+        <div style={{ background: '#f8fafc', borderRadius: 8, padding: '5px 7px', marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 4, border: '1px solid #f1f5f9' }}>
+          
+          {/* Phones + Quick Contact Icons */}
+          {phones.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+              {phones.map((phoneObj, idx) => (
+                <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#fff', padding: '1px 5px', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+                  <MdPhone style={{ fontSize: 10, color: '#4f46e5' }} />
+                  <a href={`tel:${phoneObj}`} style={{ fontSize: 10.5, color: '#4f46e5', fontWeight: 700, textDecoration: 'none' }}>
                     {phoneObj}
                   </a>
-                  {/* WhatsApp */}
-                  <a
-                    href={`https://wa.me/${intlPhone(phoneObj)}`}
-                    target="_blank" rel="noreferrer"
-                    title="WhatsApp"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      width: 24, height: 24, borderRadius: 6,
-                      background: '#dcfce7', color: '#16a34a', textDecoration: 'none',
-                      flexShrink: 0, transition: 'transform 0.15s', marginLeft: 4,
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.12)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = ''}
-                  >
-                    <RiWhatsappFill style={{ fontSize: 15 }} />
+                  <a href={`https://wa.me/${intlPhone(phoneObj)}`} target="_blank" rel="noreferrer" title="WhatsApp" style={{ color: '#16a34a', display: 'flex', alignItems: 'center' }}>
+                    <RiWhatsappFill style={{ fontSize: 12 }} />
                   </a>
-                  {/* IMO */}
-                  <a
-                    href={`https://www.imo.im/chat?phone=${intlPhone(phoneObj)}`}
-                    target="_blank" rel="noreferrer"
-                    title="IMO"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      width: 24, height: 24, borderRadius: 6,
-                      background: '#ede9fe', color: '#7c3aed', textDecoration: 'none',
-                      flexShrink: 0, fontSize: 10, fontWeight: 800,
-                      transition: 'transform 0.15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.12)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = ''}
-                  >
+                  <a href={`https://www.imo.im/chat?phone=${intlPhone(phoneObj)}`} target="_blank" rel="noreferrer" title="IMO" style={{ color: '#7c3aed', fontSize: 8.5, fontWeight: 900, textDecoration: 'none', background: '#ede9fe', padding: '0 2px', borderRadius: 2 }}>
                     imo
                   </a>
                 </div>
               ))}
             </div>
-          ) : (
-            <InfoRow icon={MdPhone}><span style={{ fontSize: 12, color: '#94a3b8' }}>ফোন নম্বর নেই</span></InfoRow>
           )}
 
-          {/* Loan amount & Installment */}
-          <InfoRow icon={MdAttachMoney} iconColor="#059669">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12, color: '#334155', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 600 }}>
-                মোট ঋণ: {formatMoney(member.loan_amount)}
+          {/* Key Stats Grid: Loan, Kisti & Dates in 1 Line / Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, background: '#fff', padding: '4px 6px', borderRadius: 6, border: '1px solid #edf2f7' }}>
+            <div>
+              <span style={{ fontSize: 9, color: '#64748b', display: 'block', fontFamily: "'Hind Siliguri', sans-serif" }}>ঋণ (মাসিক কিস্তি)</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {formatMoney(member.loan_amount)} {member.loan_amount > 0 && <span style={{ color: '#166534', fontWeight: 700 }}>({formatMoney(member.loan_amount * 0.1)})</span>}
               </span>
-              {member.loan_amount > 0 && (
-                <>
-                  <span style={{ color: '#cbd5e1', fontSize: 10 }}>•</span>
-                  <span style={{ fontSize: 12, color: '#059669', fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 700, background: '#dcfce7', padding: '1px 6px', borderRadius: 6 }}>
-                    মাসিক কিস্তি: {formatMoney(member.loan_amount * 0.1)}
-                  </span>
-                </>
-              )}
             </div>
-          </InfoRow>
+            <div>
+              <span style={{ fontSize: 9, color: daysOverdue && member.is_due ? '#dc2626' : '#64748b', display: 'block', fontFamily: "'Hind Siliguri', sans-serif" }}>
+                কিস্তির তারিখ
+              </span>
+              <span style={{ fontSize: 11, color: daysOverdue && member.is_due ? '#dc2626' : '#334155', fontWeight: 700, fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {formatDate(member.loan_payment_date)}
+              </span>
+            </div>
+          </div>
 
-          {/* Extra amount — yellow highlighted */}
+          {/* Sub-dates row (if disbursement / expected / cleared date present) */}
+          {(hasExpectedDate || member.loan_disbursement_date || hasClearedDate) && (
+            <div style={{ fontSize: 10, color: '#475569', fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+              {hasExpectedDate && <span style={{ color: '#1d4ed8', fontWeight: 600 }}>সম্ভাব্য: {formatDate(member.expected_payment_date)}</span>}
+              {!hasExpectedDate && member.loan_disbursement_date && <span style={{ color: '#15803d', fontWeight: 600 }}>বিতরণ: {formatDate(member.loan_disbursement_date)}</span>}
+              {!hasExpectedDate && !member.loan_disbursement_date && hasClearedDate && <span style={{ color: '#15803d', fontWeight: 600 }}>পরিশোধ: {formatDate(member.loan_cleared_date)}</span>}
+            </div>
+          )}
+
+          {/* Extra Amount Highlight */}
           {hasExtraAmount && (
-            <div style={{ background: 'linear-gradient(90deg,#fef9c3,#fef3c7)', borderRadius: 8, padding: '5px 8px', border: '1px solid #fde68a', display: 'flex', flexDirection: 'column', gap: 2, margin: '1px 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <MdCurrencyExchange style={{ fontSize: 13, color: '#d97706' }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#92400e', fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  অতিরিক্ত পাওনা: {formatMoney(member.extra_amount)}
+            <div style={{ background: '#fef3c7', borderRadius: 4, padding: '3px 6px', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <MdCurrencyExchange style={{ fontSize: 11, color: '#d97706' }} />
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#92400e', fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  অতিরিক্ত: {formatMoney(member.extra_amount)}
                 </span>
-                {member.extra_amount_date && (
-                  <span style={{ fontSize: 10, color: '#b45309', background: '#fde68a', borderRadius: 5, padding: '1px 5px', fontFamily: "'Hind Siliguri', sans-serif", marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-                    {formatDate(member.extra_amount_date)}
-                  </span>
-                )}
               </div>
-            </div>
-          )}
-
-          {/* Member Note — Always visible if exists */}
-          {member.extra_amount_note && (
-            <div style={{ background: '#fef9c3', borderRadius: 8, padding: '5px 8px', border: '1px solid #fde68a', margin: '1px 0', display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-              <MdNotes style={{ fontSize: 11, color: '#a16207', flexShrink: 0, marginTop: 1 }} />
-              <span style={{ fontSize: 11, color: '#78350f', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.4 }}>{member.extra_amount_note}</span>
-            </div>
-          )}
-
-          {/* Kisti date with overdue indicator */}
-          <InfoRow
-            icon={MdCalendarToday}
-            iconColor={daysOverdue && member.is_due ? '#dc2626' : '#94a3b8'}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-              <span style={{ fontSize: 12, color: daysOverdue && member.is_due ? '#dc2626' : '#334155', fontWeight: daysOverdue && member.is_due ? 700 : 400, fontFamily: "'Hind Siliguri', sans-serif" }}>
-                কিস্তির তারিখ: {formatDate(member.loan_payment_date)}
-              </span>
-              {daysOverdue && member.is_due && (
-                <span style={{ background: '#dc2626', color: '#fff', borderRadius: 6, padding: '1px 6px', fontSize: 10, fontWeight: 800, fontFamily: "'Hind Siliguri', sans-serif", display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                  <MdAccessTime style={{ fontSize: 10 }} />{daysOverdue} দিন বেশি
+              {member.extra_amount_date && (
+                <span style={{ fontSize: 9, color: '#b45309', fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  {formatDate(member.extra_amount_date)}
                 </span>
               )}
             </div>
-          </InfoRow>
-
-          {/* Expected payment date */}
-          {hasExpectedDate && (
-            <div style={{ background: hasClearedDate ? '#f0fdf4' : '#eff6ff', borderRadius: 8, padding: '4px 8px', border: `1px solid ${hasClearedDate ? '#86efac' : '#bfdbfe'}`, margin: '1px 0' }}>
-              <InfoRow icon={MdSchedule} iconColor={hasClearedDate ? '#16a34a' : '#3b82f6'}>
-                <span style={{ fontSize: 11, color: hasClearedDate ? '#15803d' : '#1d4ed8', fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  কিস্তি পাওয়ার সম্ভব্য তারিখ: {formatDate(member.expected_payment_date)}
-                </span>
-              </InfoRow>
-            </div>
           )}
 
-          {/* Loan cleared date */}
-          {hasClearedDate && (
-            <InfoRow icon={MdEventAvailable} iconColor="#16a34a">
-              <span style={{ fontSize: 12, color: '#15803d', fontWeight: 600, fontFamily: "'Hind Siliguri', sans-serif" }}>
-                পরিশোধ হয়েছে: {formatDate(member.loan_cleared_date)}
-              </span>
-            </InfoRow>
+          {/* Extra Note */}
+          {member.extra_amount_note && (
+            <div style={{ background: '#fffbeb', borderRadius: 4, padding: '3px 6px', border: '1px solid #fef3c7', display: 'flex', alignItems: 'flex-start', gap: 3 }}>
+              <MdNotes style={{ fontSize: 10, color: '#b45309', flexShrink: 0, marginTop: 1 }} />
+              <span style={{ fontSize: 10, color: '#78350f', fontFamily: "'Hind Siliguri', sans-serif", lineHeight: 1.2 }}>{member.extra_amount_note}</span>
+            </div>
           )}
         </div>
 
-        {/* ── Status toggles with confirm ── */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {/* ── Line 3: Ultra-Compact Status Toggles ── */}
+        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
           <ToggleWithConfirm
             id={`toggle-due-${member.id}`}
             on={member.is_due}
             onColor="red"
             onClick={() => onToggleDue(member.id, !member.is_due)}
-            label={member.is_due ? 'বকেয়া আছে' : 'বকেয়া নেই'}
+            label={member.is_due ? 'বকেয়া' : 'বকেয়া মুক্ত'}
             icon={member.is_due ? MdCancel : MdCheckCircle}
             confirmMsg={member.is_due ? 'বকেয়া পরিষ্কার করবেন?' : 'বকেয়া হিসেবে চিহ্নিত করবেন?'}
           />
@@ -502,7 +395,7 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
             on={member.is_called}
             onColor="blue"
             onClick={() => onToggleCalled(member.id, !member.is_called)}
-            label={member.is_called ? 'কল হয়েছে' : 'কল হয়নি'}
+            label={member.is_called ? 'কলড' : 'কল হয়নি'}
             icon={member.is_called ? MdPhone : MdPhoneDisabled}
             confirmMsg={member.is_called ? 'কলের চিহ্ন সরাবেন?' : 'কল সম্পন্ন হিসেবে চিহ্নিত করবেন?'}
           />
@@ -522,16 +415,16 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
             on={member.is_confirmed}
             onColor="green"
             onClick={() => onToggleConfirmed(member.id, !member.is_confirmed)}
-            label={member.is_confirmed ? 'নিশ্চিত' : 'নিশ্চিত করুন'}
+            label={member.is_confirmed ? 'নিশ্চিত' : 'নিশ্চিত'}
             icon={MdVerified}
             confirmMsg={member.is_confirmed ? 'নিশ্চিত মার্ক সরাবেন?' : 'নিশ্চিত পাবো হিসেবে চিহ্নিত করবেন?'}
           />
           {onMarkPaid && (member.loan_payment_date || member.expected_payment_date) && !member.loan_cleared_date && (
             <ActionWithConfirm
               onClick={() => onMarkPaid(member)}
-              label="কিস্তি পরিশোধ করুন"
+              label="পরিশোধ"
               icon={MdCheckCircle}
-              confirmMsg="কিস্তি পরিশোধ নিশ্চিত করবেন? এর ফলে তারিখগুলো মুছে যাবে এবং আগামী মাসের জন্য রেডি হবে।"
+              confirmMsg="কিস্তি পরিশোধ নিশ্চিত করবেন? তারিখ আগামী মাসের জন্য আপডেট হবে।"
               colorTheme="gray"
             />
           )}
@@ -543,3 +436,4 @@ const MemberCard = ({ member, onEdit, onDelete, onToggleDue, onToggleCalled, onM
 }
 
 export default MemberCard
+

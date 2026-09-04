@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -110,8 +110,8 @@ export const useVOGroups = () => {
   }
 
   // Active VOs (not disabled) - use this for filtering data everywhere
-  const activeVoGroups = voGroups.filter(vo => !vo.is_disabled)
-  const disabledVoNumbers = voGroups.filter(vo => vo.is_disabled).map(vo => vo.vo_number)
+  const activeVoGroups = useMemo(() => voGroups.filter(vo => !vo.is_disabled), [voGroups])
+  const disabledVoNumbers = useMemo(() => voGroups.filter(vo => vo.is_disabled).map(vo => vo.vo_number), [voGroups])
 
   return {
     voGroups,
@@ -144,7 +144,13 @@ export const useDashboardStats = () => {
     totalBooks: 0,
     totalNotes: 0,
     unwrittenKhata: 0,
-    latePayers: 0
+    latePayers: 0,
+    firstKistiCount: 0,
+    secondKistiCount: 0,
+    total2026KistiCount: 0,
+    firstKistiList: [],
+    secondKistiList: [],
+    kisti2026List: [],
   })
   const [loading, setLoading] = useState(true)
 
@@ -163,58 +169,65 @@ export const useDashboardStats = () => {
       const nextWeek = nextWeekObj.toISOString().split('T')[0]
 
       // First fetch disabled VO numbers
-      const { data: disabledVOs } = await supabase
-        .from('vo_groups')
-        .select('vo_number')
-        .eq('is_disabled', true)
-      const disabledVoNums = (disabledVOs || []).map(v => v.vo_number)
+      let disabledVoNums = []
+      try {
+        const { data: disabledVOs } = await supabase
+          .from('vo_groups')
+          .select('vo_number')
+          .eq('is_disabled', true)
+        disabledVoNums = (disabledVOs || []).map(v => v.vo_number)
+      } catch (e) { console.warn('Disabled VOs fetch failed:', e) }
 
-      // Build member queries - if disabled VOs exist, filter them out
-      let membersQuery = supabase.from('members').select('id', { count: 'exact', head: true })
-      let voQuery = supabase.from('vo_groups').select('id', { count: 'exact', head: true }).neq('is_disabled', true)
-      let dueQuery = supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_due', true)
-      let lateQuery = supabase.from('members').select('id', { count: 'exact', head: true }).eq('is_late_payer', true)
+      const disabledVoSet = new Set((disabledVoNums || []).map(Number))
 
-      if (disabledVoNums.length > 0) {
-        const notIn = disabledVoNums
-        membersQuery = membersQuery.not('vo_number', 'in', `(${notIn.join(',')})`)
-        dueQuery = dueQuery.not('vo_number', 'in', `(${notIn.join(',')})`)
-        lateQuery = lateQuery.not('vo_number', 'in', `(${notIn.join(',')})`)
-      }
+      // Build basic counts
+      let totalMembers = 0
+      let totalVOs = 0
+      let dueMembers = 0
+      let latePayers = 0
 
-      const [membersRes, voRes, dueRes, lateRes] = await Promise.all([
-        membersQuery, voQuery, dueQuery, lateQuery,
-      ])
+      try {
+        const [mRes, vRes] = await Promise.all([
+          supabase.from('members').select('vo_number, is_due, is_late_payer'),
+          supabase.from('vo_groups').select('id', { count: 'exact', head: true }).neq('is_disabled', true),
+        ])
+        const activeMembers = (mRes.data || []).filter(m => !disabledVoSet.has(Number(m.vo_number)))
+        totalMembers = activeMembers.length
+        dueMembers = activeMembers.filter(m => m.is_due).length
+        latePayers = activeMembers.filter(m => m.is_late_payer).length
+        totalVOs = vRes.count || 0
+      } catch (e) { console.warn('Basic member/VO fetch failed:', e) }
 
-      // for today and tomorrow payments, we fetch since we need custom logic
-      let kistiQuery = supabase
-        .from('members')
-        .select('loan_payment_date, expected_payment_date, is_confirmed')
-        .is('loan_cleared_date', null)
-      if (disabledVoNums.length > 0) {
-        kistiQuery = kistiQuery.not('vo_number', 'in', `(${disabledVoNums.join(',')})`)
-      }
-      const { data: kistiData } = await kistiQuery
+      // Payments for today, tomorrow, next week
+      let todayCount = 0, tomorrowCount = 0, nextWeekCount = 0
+      let todayConfirmedCount = 0, tomorrowConfirmedCount = 0, nextWeekConfirmedCount = 0
+      try {
+        const { data: kistiData } = await supabase
+          .from('members')
+          .select('vo_number, loan_payment_date, expected_payment_date, is_confirmed')
+          .is('loan_cleared_date', null)
 
-      const todayList = (kistiData || []).filter(m =>
-        (m.loan_payment_date && m.loan_payment_date === today) ||
-        (m.expected_payment_date && m.expected_payment_date === today)
-      )
-      const tomorrowList = (kistiData || []).filter(m =>
-        (m.loan_payment_date && m.loan_payment_date === tomorrow) ||
-        (m.expected_payment_date && m.expected_payment_date === tomorrow)
-      )
-      const nextWeekList = (kistiData || []).filter(m =>
-        (m.loan_payment_date && m.loan_payment_date === nextWeek) ||
-        (m.expected_payment_date && m.expected_payment_date === nextWeek)
-      )
+        const activeKisti = (kistiData || []).filter(m => !disabledVoSet.has(Number(m.vo_number)))
+        const todayList = activeKisti.filter(m =>
+          (m.loan_payment_date && m.loan_payment_date === today) ||
+          (m.expected_payment_date && m.expected_payment_date === today)
+        )
+        const tomorrowList = activeKisti.filter(m =>
+          (m.loan_payment_date && m.loan_payment_date === tomorrow) ||
+          (m.expected_payment_date && m.expected_payment_date === tomorrow)
+        )
+        const nextWeekList = activeKisti.filter(m =>
+          (m.loan_payment_date && m.loan_payment_date === nextWeek) ||
+          (m.expected_payment_date && m.expected_payment_date === nextWeek)
+        )
 
-      const todayCount = todayList.length
-      const tomorrowCount = tomorrowList.length
-      const nextWeekCount = nextWeekList.length
-      const todayConfirmedCount = todayList.filter(m => m.is_confirmed).length
-      const tomorrowConfirmedCount = tomorrowList.filter(m => m.is_confirmed).length
-      const nextWeekConfirmedCount = nextWeekList.filter(m => m.is_confirmed).length
+        todayCount = todayList.length
+        tomorrowCount = tomorrowList.length
+        nextWeekCount = nextWeekList.length
+        todayConfirmedCount = todayList.filter(m => m.is_confirmed).length
+        tomorrowConfirmedCount = tomorrowList.filter(m => m.is_confirmed).length
+        nextWeekConfirmedCount = nextWeekList.filter(m => m.is_confirmed).length
+      } catch (e) { console.warn('Kisti payments fetch failed:', e) }
 
       // Also fetch pending collections (gracefully handle if table missing)
       let pendingCount = 0
@@ -231,15 +244,13 @@ export const useDashboardStats = () => {
       // Fetch total due amount
       let totalDueAmount = 0
       try {
-        let dueAmtQuery = supabase
+        const { data: dueData } = await supabase
           .from('members')
-          .select('extra_amount')
+          .select('vo_number, extra_amount')
           .gt('extra_amount', 0)
-        if (disabledVoNums.length > 0) {
-          dueAmtQuery = dueAmtQuery.not('vo_number', 'in', `(${disabledVoNums.join(',')})`)
-        }
-        const { data: dueData } = await dueAmtQuery
-        totalDueAmount = (dueData || []).reduce((sum, m) => sum + (m.extra_amount || 0), 0)
+        totalDueAmount = (dueData || [])
+          .filter(m => !disabledVoSet.has(Number(m.vo_number)))
+          .reduce((sum, m) => sum + (m.extra_amount || 0), 0)
       } catch (e) { console.warn('due amount fetch failed') }
 
       // Fetch running books with-me
@@ -311,16 +322,136 @@ export const useDashboardStats = () => {
         unwrittenKhata = count || 0
       } catch (e) { console.warn('unwritten khata fetch failed') }
 
+      // Fetch members for 1st, 2nd, 2026 & last kisti stats
+      let firstKistiList = []
+      let secondKistiList = []
+      let kisti2026List = []
+      let lastKistiList = []
+      let total2026KistiCount = 0
+
+      try {
+        const { data: allMemb, error: membErr } = await supabase.from('members').select('*')
+        if (membErr) {
+          console.warn('Kisti members query error:', membErr)
+        }
+
+        const currentYM = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}`
+
+        const safeAddMonths = (baseDate, months) => {
+          try {
+            const dt = new Date(baseDate.getTime())
+            const day = dt.getDate()
+            dt.setDate(1)
+            dt.setMonth(dt.getMonth() + months)
+            const maxDays = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate()
+            dt.setDate(Math.min(day, maxDays))
+            const yr = dt.getFullYear()
+            const mo = String(dt.getMonth() + 1).padStart(2, '0')
+            const da = String(dt.getDate()).padStart(2, '0')
+            return `${yr}-${mo}-${da}`
+          } catch { return null }
+        }
+
+        const safeParseDate = (dateStr) => {
+          try {
+            if (!dateStr) return null
+            const clean = String(dateStr).split('T')[0].split(' ')[0].trim()
+            if (clean.includes('-')) {
+              const parts = clean.split('-')
+              if (parts.length === 3 && parts[0].length === 4) {
+                const yr = parseInt(parts[0], 10)
+                const mo = parseInt(parts[1], 10)
+                const da = parseInt(parts[2], 10)
+                if (!isNaN(yr) && !isNaN(mo) && !isNaN(da)) {
+                  return new Date(yr, mo - 1, da)
+                }
+              }
+            }
+            const fallback = new Date(dateStr)
+            return isNaN(fallback.getTime()) ? null : fallback
+          } catch { return null }
+        }
+
+        ;(allMemb || []).forEach(member => {
+          try {
+            if (!member.loan_disbursement_date) return
+            if (member.loan_cleared_date) return
+            if (disabledVoSet.has(Number(member.vo_number))) return
+
+            const disbDate = safeParseDate(member.loan_disbursement_date)
+            if (!disbDate) return
+            const disbDateStr = member.loan_disbursement_date
+
+            // 1st kisti: disbursement + 1 month = current month AND not paid this month
+            const firstKistiDate = safeAddMonths(disbDate, 1)
+            if (firstKistiDate && firstKistiDate.substring(0, 7) === currentYM) {
+              const paidThisMonth = member.last_paid_date && String(member.last_paid_date).substring(0, 7) === currentYM
+              if (!paidThisMonth) {
+                firstKistiList.push({ ...member, loan_disbursement_date: disbDateStr, firstKistiDate })
+              }
+            }
+
+            // 2nd kisti: disbursement + 2 months = current month AND not paid this month
+            const secondKistiDate = safeAddMonths(disbDate, 2)
+            if (secondKistiDate && secondKistiDate.substring(0, 7) === currentYM) {
+              const paidThisMonth = member.last_paid_date && String(member.last_paid_date).substring(0, 7) === currentYM
+              if (!paidThisMonth) {
+                secondKistiList.push({ ...member, loan_disbursement_date: disbDateStr, secondKistiDate })
+              }
+            }
+
+            // Last kisti (12th month): disbursement + 12 months = current month AND not paid this month
+            const lastKistiDate = safeAddMonths(disbDate, 12)
+            if (lastKistiDate && lastKistiDate.substring(0, 7) === currentYM) {
+              const paidThisMonth = member.last_paid_date && String(member.last_paid_date).substring(0, 7) === currentYM
+              if (!paidThisMonth) {
+                lastKistiList.push({ ...member, loan_disbursement_date: disbDateStr, lastKistiDate })
+              }
+            }
+
+            // 2026 kisti: loans disbursed in 2026, count unpaid installments up to current month
+            if (disbDate.getFullYear() === 2026) {
+              let count2026 = 0
+              const dates2026 = []
+              for (let i = 1; i <= 12; i++) {
+                const kistiDate = safeAddMonths(disbDate, i)
+                if (!kistiDate) continue
+                const kistiYM = kistiDate.substring(0, 7)
+                if (kistiYM > currentYM) break
+                if (kistiDate.substring(0, 4) === '2026') {
+                  const paidMonth = member.last_paid_date && String(member.last_paid_date).substring(0, 7) === kistiYM
+                  if (!paidMonth) {
+                    count2026++
+                    dates2026.push(kistiDate)
+                  }
+                }
+              }
+              if (count2026 > 0) {
+                kisti2026List.push({ ...member, loan_disbursement_date: disbDateStr, count2026, dates2026 })
+                total2026KistiCount += count2026
+              }
+            }
+          } catch (memberErr) {
+            // Skip this member, don't break entire calculation
+            console.warn('Error processing member for kisti:', member?.id, memberErr)
+          }
+        })
+
+        console.log('[Dashboard Kisti Stats] 1st:', firstKistiList.length, '2nd:', secondKistiList.length, '2026:', total2026KistiCount, 'Last:', lastKistiList.length, 'CurrentYM:', currentYM, 'TotalMembers fetched:', (allMemb || []).length)
+      } catch (e) {
+        console.warn('Installment stats fetch failed:', e)
+      }
+
       setStats({
-        totalMembers: membersRes.count || 0,
-        totalVOs: voRes.count || 0,
+        totalMembers,
+        totalVOs,
         todayPayments: todayCount,
         tomorrowPayments: tomorrowCount,
         nextWeekPayments: nextWeekCount,
         todayConfirmed: todayConfirmedCount,
         tomorrowConfirmed: tomorrowConfirmedCount,
         nextWeekConfirmed: nextWeekConfirmedCount,
-        dueMembers: dueRes.count || 0,
+        dueMembers,
         pendingCollections: pendingCount,
         totalDueAmount,
         totalLoanApplications,
@@ -331,7 +462,15 @@ export const useDashboardStats = () => {
         runningBooks,
         totalNotes,
         unwrittenKhata,
-        latePayers: lateRes.count || 0
+        latePayers,
+        firstKistiCount: firstKistiList.length,
+        secondKistiCount: secondKistiList.length,
+        total2026KistiCount,
+        lastKistiCount: lastKistiList.length,
+        firstKistiList,
+        secondKistiList,
+        kisti2026List,
+        lastKistiList,
       })
     } catch (err) {
       console.error('Stats fetch error:', err)

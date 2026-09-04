@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useDashboardStats } from '../hooks/useVOGroups'
+import { useDashboardStats, useVOGroups } from '../hooks/useVOGroups'
 import { useAuthStore } from '../store/authStore'
 import {
   MdPeople, MdGroups, MdToday, MdWarning, MdEvent,
   MdArrowForward, MdRefresh, MdDashboard, MdPendingActions,
   MdCheckCircle, MdAccessTime, MdAttachMoney, MdAddCard, MdBook, MdEditNote, MdSchedule, MdEventAvailable,
+  MdSearch, MdClose, MdCalendarToday, MdPhone, MdFlag,
 } from 'react-icons/md'
 import { RiShieldCheckLine } from 'react-icons/ri'
 import { HiSparkles } from 'react-icons/hi2'
@@ -152,7 +153,9 @@ const QuickCard = ({ icon: Icon, title, subtitle, count, color, onClick, loading
 const DashboardPage = () => {
   const navigate = useNavigate()
   const { stats, loading, fetchStats } = useDashboardStats()
+  const { voGroups } = useVOGroups()
   const { user } = useAuthStore()
+  const [selectedKistiCategory, setSelectedKistiCategory] = useState(null)
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'শুভ সকাল' : hour < 17 ? 'শুভ বিকেল' : 'শুভ সন্ধ্যা'
@@ -267,8 +270,61 @@ const DashboardPage = () => {
           {statCards.map(c => <StatCard key={c.title} {...c} loading={loading} />)}
         </div>
 
+        {/* ── Installment Analysis based on Disbursement Date ── */}
+        <div style={{ marginBottom: '0.6rem', marginTop: '1rem' }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+            📅 ঋণ বিতরণ ও কিস্তি বিশ্লেষণ
+          </p>
+        </div>
+        <div className="db-action-grid">
+          <StatCard
+            title="১ম কিস্তি"
+            value={stats.firstKistiCount || 0}
+            subInfo="(বিতরণের পর মাস)"
+            icon={MdCalendarToday}
+            g1="#4f46e5" g2="#3730a3" glow="#4f46e5"
+            badge="১ম কিস্তি"
+            onClick={() => navigate('/first-kisti')}
+            loading={loading}
+            delay={0.3}
+          />
+          <StatCard
+            title="২য় কিস্তি"
+            value={stats.secondKistiCount || 0}
+            subInfo="(বিতরণের ২য় মাস)"
+            icon={MdEventAvailable}
+            g1="#0ea5e9" g2="#0369a1" glow="#0ea5e9"
+            badge="২য় কিস্তি"
+            onClick={() => navigate('/second-kisti')}
+            loading={loading}
+            delay={0.35}
+          />
+          <StatCard
+            title="২০২৬ সালের কিস্তি"
+            value={stats.total2026KistiCount || 0}
+            subInfo={`(${stats.kisti2026List?.length || 0} জন)`}
+            icon={MdSchedule}
+            g1="#d97706" g2="#b45309" glow="#d97706"
+            badge="২০২৬ সাল"
+            onClick={() => navigate('/kisti-2026')}
+            loading={loading}
+            delay={0.4}
+          />
+          <StatCard
+            title="শেষ কিস্তি"
+            value={stats.lastKistiCount || 0}
+            subInfo="(১২তম মাস)"
+            icon={MdSchedule}
+            g1="#ec4899" g2="#be185d" glow="#ec4899"
+            badge="শেষ কিস্তি"
+            onClick={() => navigate('/last-kisti')}
+            loading={loading}
+            delay={0.45}
+          />
+        </div>
+
         {/* ── New Feature Cards ── */}
-        <div style={{ marginBottom: '0.6rem' }}>
+        <div style={{ marginBottom: '0.6rem', marginTop: '1rem' }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, fontFamily: "'Hind Siliguri', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
             ✨ লোন ও অন্যান্য
           </p>

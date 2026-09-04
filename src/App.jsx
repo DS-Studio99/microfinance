@@ -22,6 +22,10 @@ import NotesPage from './pages/NotesPage'
 import UnwrittenKhataPage from './pages/UnwrittenKhataPage'
 import LatePayersPage from './pages/LatePayersPage'
 import NextWeekKistiPage from './pages/NextWeekKistiPage'
+import FirstKistiPage from './pages/FirstKistiPage'
+import SecondKistiPage from './pages/SecondKistiPage'
+import Kisti2026Page from './pages/Kisti2026Page'
+import LastKistiPage from './pages/LastKistiPage'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -134,6 +138,10 @@ const App = () => {
             <Route path="notes" element={<NotesPage />} />
             <Route path="unwritten-khata" element={<UnwrittenKhataPage />} />
             <Route path="late-payers" element={<LatePayersPage />} />
+            <Route path="first-kisti" element={<FirstKistiPage />} />
+            <Route path="second-kisti" element={<SecondKistiPage />} />
+            <Route path="kisti-2026" element={<Kisti2026Page />} />
+            <Route path="last-kisti" element={<LastKistiPage />} />
           </Route>
 
           {/* Catch-all */}
